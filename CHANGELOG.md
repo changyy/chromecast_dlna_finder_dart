@@ -1,3 +1,12 @@
+## 1.0.4
+
+- Enhanced localization file path detection for various usage scenarios (global CLI, library dependency, Flutter app)
+- Added support for finding locale files in global installation directories
+- Implemented automatic locale file detection in Flutter applications (Android, iOS, macOS, Windows, Linux)
+- Added embedded translations as fallback when locale files cannot be found
+- Improved error logging with detailed path information for better diagnostics
+- Updated asset configuration in pubspec.yaml to ensure proper packaging of locale files
+
 ## 1.0.3
 
 - Major refactor of logger system: removed LogMode/suppressOutput, now uses setOutputs({LoggerOutput.stderr, ...}) for flexible log output control (stderr, stdout, broadcast, or silent).

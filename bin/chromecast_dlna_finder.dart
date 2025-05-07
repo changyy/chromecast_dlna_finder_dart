@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:args/args.dart';
+import 'package:path/path.dart' as path;
+import 'package:yaml/yaml.dart';
 import 'package:chromecast_dlna_finder/chromecast_dlna_finder.dart';
 import 'package:chromecast_dlna_finder/src/util/logger.dart';
 import 'package:chromecast_dlna_finder/src/util/localization.dart';
@@ -17,6 +19,12 @@ void main(List<String> arguments) async {
           abbr: 'h',
           negatable: false,
           help: 'Display help message',
+        )
+        ..addFlag(
+          'version',
+          abbr: 'v',
+          negatable: false,
+          help: 'Display version information',
         )
         ..addFlag(
           'minify',
@@ -73,6 +81,13 @@ void main(List<String> arguments) async {
     // Show help information
     if (results['help']) {
       printUsage(parser);
+      return;
+    }
+
+    // Show version information
+    if (results['version']) {
+      final version = await getPackageVersion();
+      stdout.writeln('Chromecast & DLNA Device Scanner Version: $version');
       return;
     }
 
@@ -174,4 +189,65 @@ void printUsage(ArgParser parser) {
   stdout.writeln(
     '  chromecast_dlna_finder --debug             # Enable debug level logging',
   );
+  stdout.writeln(
+    '  chromecast_dlna_finder --version           # Display version information',
+  );
+}
+
+/// 從 pubspec.yaml 讀取版本號
+Future<String> getPackageVersion() async {
+  try {
+    // 找到當前腳本的路徑
+    final scriptPath = Platform.script.toFilePath();
+
+    // 向上查找 pubspec.yaml 文件
+    String? pubspecPath;
+
+    // 嘗試直接在當前目錄
+    final currentDir = Directory.current.path;
+    if (await File('$currentDir/pubspec.yaml').exists()) {
+      pubspecPath = '$currentDir/pubspec.yaml';
+    } else {
+      // 嘗試從腳本路徑向上查找
+      var directory = Directory(path.dirname(scriptPath));
+      while (directory.path != directory.parent.path) {
+        final testPath = path.join(directory.path, 'pubspec.yaml');
+        if (await File(testPath).exists()) {
+          pubspecPath = testPath;
+          break;
+        }
+        directory = directory.parent;
+      }
+    }
+
+    if (pubspecPath == null) {
+      // 如果找不到 pubspec.yaml，嘗試在全局安裝目錄查找
+      final homeDir = Platform.environment['HOME'] ?? '';
+      final possiblePaths = [
+        '$homeDir/.pub-cache/global_packages/chromecast_dlna_finder/pubspec.yaml',
+        '$homeDir/.pub-cache/hosted/pub.dev/chromecast_dlna_finder-1.0.4/pubspec.yaml',
+      ];
+
+      for (final p in possiblePaths) {
+        if (await File(p).exists()) {
+          pubspecPath = p;
+          break;
+        }
+      }
+    }
+
+    // 如果找到了 pubspec.yaml 文件
+    if (pubspecPath != null) {
+      final pubspecContent = await File(pubspecPath).readAsString();
+      final yaml = loadYaml(pubspecContent);
+      if (yaml['version'] != null) {
+        return yaml['version'].toString();
+      }
+    }
+  } catch (e) {
+    // 忽略錯誤，返回默認版本
+  }
+
+  // 如果無法讀取版本號，返回默認版本
+  return '1.0.4'; // 硬編碼的備用版本
 }
