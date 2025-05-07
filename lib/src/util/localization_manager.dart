@@ -8,17 +8,17 @@ class LocalizationManager {
 
   /// 當前使用的語言
   String _currentLocale = 'en';
-  
+
   /// 翻譯文本快取
   Map<String, dynamic> _translations = {};
-  
+
   /// 用於保存以防找不到翻譯時的原文字串
   final Set<String> _missingTranslations = {};
-  
+
   /// 是否已完成初始化
   bool _initialized = false;
   Completer<void> _initCompleter = Completer<void>();
-  
+
   /// 是否啟用詳細的除錯模式
   bool _debugMode = false;
 
@@ -28,7 +28,7 @@ class LocalizationManager {
   void setDebugMode(bool enabled) {
     _debugMode = enabled;
   }
-  
+
   /// 簡單的日誌輸出方法，避免循環依賴
   void _log(String message, {String? tag, bool isError = false}) {
     /*
@@ -47,11 +47,14 @@ class LocalizationManager {
       return;
     }
 
-    _currentLocale = locale == null || locale.isEmpty || locale == 'auto' ? getSystemLocale() : locale;
+    _currentLocale =
+        locale == null || locale.isEmpty || locale == 'auto'
+            ? getSystemLocale()
+            : locale;
 
     // 加載翻譯文件
     await _loadTranslations();
-    
+
     _initialized = true;
     _initCompleter.complete();
   }
@@ -78,7 +81,9 @@ class LocalizationManager {
       fallbackLocales.add(base);
       final parts = base.split('_');
       if (parts.length >= 2) {
-        fallbackLocales.add("${parts[0].toLowerCase()}_${parts[1].toUpperCase()}");
+        fallbackLocales.add(
+          "${parts[0].toLowerCase()}_${parts[1].toUpperCase()}",
+        );
       }
       fallbackLocales.add(parts.first.toLowerCase());
       fallbackLocales.add('en');
@@ -96,9 +101,16 @@ class LocalizationManager {
           }
           // 測試一個範例鍵，確認翻譯載入成功
           if (_translations.containsKey('info') &&
-              (_translations['info'] as Map<String, dynamic>).containsKey('start_chromecast_scan')) {
-            final sampleTranslation = (_translations['info'] as Map<String, dynamic>)['start_chromecast_scan'];
-            _log('Translation loaded successfully, sample: info.start_chromecast_scan = "$sampleTranslation"', tag: 'i18n');
+              (_translations['info'] as Map<String, dynamic>).containsKey(
+                'start_chromecast_scan',
+              )) {
+            final sampleTranslation =
+                (_translations['info']
+                    as Map<String, dynamic>)['start_chromecast_scan'];
+            _log(
+              'Translation loaded successfully, sample: info.start_chromecast_scan = "$sampleTranslation"',
+              tag: 'i18n',
+            );
           }
           return;
         } catch (_) {
@@ -125,13 +137,13 @@ class LocalizationManager {
   String get(String key, {Map<String, dynamic>? params}) {
     // 使用點表示法讀取嵌套的鍵值
     List<String> keys = key.split('.');
-    
+
     if (keys.isEmpty) {
       return _formatWithParams(key, params);
     }
-    
+
     dynamic value = _translations;
-    
+
     // 依序訪問各級鍵值
     for (var k in keys) {
       if (value is Map && value.containsKey(k)) {
@@ -142,7 +154,7 @@ class LocalizationManager {
         return _formatWithParams(key, params);
       }
     }
-    
+
     if (value is String) {
       return _formatWithParams(value, params);
     } else {
@@ -157,12 +169,12 @@ class LocalizationManager {
     if (params == null || params.isEmpty) {
       return text;
     }
-    
+
     String result = text;
     params.forEach((key, value) {
       result = result.replaceAll('{$key}', value?.toString() ?? '');
     });
-    
+
     return result;
   }
 
@@ -176,15 +188,15 @@ class LocalizationManager {
 
   /// 獲取當前設置的語言
   String get currentLocale => _currentLocale;
-  
+
   /// 獲取所有缺失的翻譯
   Set<String> get missingTranslations => Set.from(_missingTranslations);
-  
+
   /// 清除缺失翻譯的紀錄
   void clearMissingTranslations() {
     _missingTranslations.clear();
   }
-  
+
   /// 檢查是否已初始化（公開方法）
   bool get isInitialized => _initialized;
 }

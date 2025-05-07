@@ -20,10 +20,7 @@ void main() {
     });
 
     test('Logger configuration test', () async {
-      await finder.configureLogger(
-        outputs: {},
-        minLevel: AppLogLevel.debug,
-      );
+      await finder.configureLogger(outputs: {}, minLevel: AppLogLevel.debug);
       // No exceptions should be thrown
       expect(true, isTrue);
     });
@@ -43,22 +40,40 @@ void main() {
       );
 
       final json = device.toJson();
-      
+
       expect(json['name'], equals('Test Device'));
       expect(json['ip'], equals('192.168.1.100'));
       expect(json['port'], equals(8000));
       expect(json['type'], equals('dlnaRenderer'));
       expect(json['model'], equals('Test Model'));
       expect(json['location'], equals('http://192.168.1.100:8000/desc.xml'));
-      expect(json['avTransportControlUrl'], equals('http://192.168.1.100:8000/control'));
-      expect(json['renderingControlUrl'], equals('http://192.168.1.100:8000/rendering'));
+      expect(
+        json['avTransportControlUrl'],
+        equals('http://192.168.1.100:8000/control'),
+      );
+      expect(
+        json['renderingControlUrl'],
+        equals('http://192.168.1.100:8000/rendering'),
+      );
     });
 
     test('DeviceType conversion test', () {
-      expect(DeviceType.chromecastDongle.toString().split('.').last, equals('chromecastDongle'));
-      expect(DeviceType.chromecastAudio.toString().split('.').last, equals('chromecastAudio'));
-      expect(DeviceType.dlnaRenderer.toString().split('.').last, equals('dlnaRenderer'));
-      expect(DeviceType.dlnaMediaServer.toString().split('.').last, equals('dlnaMediaServer'));
+      expect(
+        DeviceType.chromecastDongle.toString().split('.').last,
+        equals('chromecastDongle'),
+      );
+      expect(
+        DeviceType.chromecastAudio.toString().split('.').last,
+        equals('chromecastAudio'),
+      );
+      expect(
+        DeviceType.dlnaRenderer.toString().split('.').last,
+        equals('dlnaRenderer'),
+      );
+      expect(
+        DeviceType.dlnaMediaServer.toString().split('.').last,
+        equals('dlnaMediaServer'),
+      );
       expect(DeviceType.unknown.toString().split('.').last, equals('unknown'));
     });
   });
@@ -79,7 +94,10 @@ void main() {
     });
 
     test('Getting localized text test', () {
-      final text = locManager.get('info.start_device_scan', params: {'timeout': 10});
+      final text = locManager.get(
+        'info.start_device_scan',
+        params: {'timeout': 10},
+      );
       expect(text, isNotEmpty);
       expect(text, contains('10'));
     });
@@ -87,7 +105,7 @@ void main() {
     test('Changing language test', () async {
       await locManager.setLocale('zh-tw');
       expect(locManager.currentLocale, equals('zh-tw'));
-      
+
       // Switch back to English
       await locManager.setLocale('en');
     });
@@ -96,7 +114,7 @@ void main() {
   group('DiscoveryService mock tests', () {
     test('JSON format conversion test', () {
       final discoveryService = DiscoveryService();
-      
+
       // Create mock device data
       final devices = {
         'chromecast': <DiscoveredDevice>[
@@ -131,9 +149,9 @@ void main() {
         ],
         'errors': <DiscoveredDevice>[],
       };
-      
+
       final json = discoveryService.toJson(devices);
-      
+
       expect(json['status'], isTrue);
       expect(json['error'], isEmpty);
       expect(json['chromecast'], hasLength(1));

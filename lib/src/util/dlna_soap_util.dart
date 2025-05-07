@@ -34,10 +34,16 @@ class DlnaSoapUtil {
     return _parseSoapResponse(responseBody, action);
   }
 
-  static String _buildSoapEnvelope(String serviceType, String action, Map<String, dynamic> args) {
+  static String _buildSoapEnvelope(
+    String serviceType,
+    String action,
+    Map<String, dynamic> args,
+  ) {
     final buffer = StringBuffer();
     buffer.writeln('<?xml version="1.0" encoding="utf-8"?>');
-    buffer.writeln('<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">');
+    buffer.writeln(
+      '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">',
+    );
     buffer.writeln('<s:Body>');
     buffer.writeln('<u:$action xmlns:u="$serviceType">');
     args.forEach((k, v) {
@@ -51,13 +57,17 @@ class DlnaSoapUtil {
     return buffer.toString();
   }
 
-  static Map<String, dynamic> _parseSoapResponse(String xmlString, String action) {
+  static Map<String, dynamic> _parseSoapResponse(
+    String xmlString,
+    String action,
+  ) {
     final document = XmlDocument.parse(xmlString);
     final result = <String, dynamic>{};
     // 嘗試取得 `u:${action}Response` 下所有子元素
-    final body = document.findAllElements('s:Body').isEmpty
-        ? document.rootElement
-        : document.findAllElements('s:Body').first;
+    final body =
+        document.findAllElements('s:Body').isEmpty
+            ? document.rootElement
+            : document.findAllElements('s:Body').first;
     final resp = body.descendants.whereType<XmlElement>().firstWhere(
       (e) => e.name.local.endsWith('${action}Response'),
       orElse: () => XmlElement(XmlName('empty')),

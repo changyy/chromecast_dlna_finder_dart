@@ -83,10 +83,16 @@
 
   if (pretty) {
     result = JsonEncoder.withIndent(&#39;  &#39;).convert(jsonMap);
-    await _logger.debug(&#39;Generated pretty JSON string, length: ${result.length}&#39;, tag: &#39;Finder&#39;);
+    await _logger.debug(
+      &#39;Generated pretty JSON string, length: ${result.length}&#39;,
+      tag: &#39;Finder&#39;,
+    );
   } else {
     result = jsonEncode(jsonMap);
-    await _logger.debug(&#39;Generated JSON string, length: ${result.length}&#39;, tag: &#39;Finder&#39;);
+    await _logger.debug(
+      &#39;Generated JSON string, length: ${result.length}&#39;,
+      tag: &#39;Finder&#39;,
+    );
   }
 
   return result;
@@ -118,7 +124,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.0
+      1.0.3
   </span>
   
 </footer>

@@ -6,11 +6,16 @@ import '../util/dlna_device_utils.dart';
 import '../util/logger.dart';
 
 /// Scan for DLNA Renderer devices in the local network (using SSDP/UPnP)
-Future<List<DiscoveredDevice>> scanDlnaRendererDevices({Duration timeout = const Duration(seconds: 3)}) async {
+Future<List<DiscoveredDevice>> scanDlnaRendererDevices({
+  Duration timeout = const Duration(seconds: 3),
+}) async {
   final logger = AppLogger();
   await logger.info('info.start_dlna_renderer_scan', tag: 'SSDP');
   final List<DiscoveredDevice> devices = [];
-  final RawDatagramSocket socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+  final RawDatagramSocket socket = await RawDatagramSocket.bind(
+    InternetAddress.anyIPv4,
+    0,
+  );
   // SSDP discovery message
   const String ssdpRequest =
       'M-SEARCH * HTTP/1.1\r\n'
@@ -35,13 +40,19 @@ Future<List<DiscoveredDevice>> scanDlnaRendererDevices({Duration timeout = const
           final nameMatch = RegExp(r'\nSERVER: (.+)').firstMatch(resp);
           final name = nameMatch?.group(1) ?? 'DLNA Renderer';
           // Parse LOCATION field
-          final locationMatch = RegExp(r'LOCATION:\s*(.+)\r?\n', caseSensitive: false).firstMatch(resp);
+          final locationMatch = RegExp(
+            r'LOCATION:\s*(.+)\r?\n',
+            caseSensitive: false,
+          ).firstMatch(resp);
           final location = locationMatch?.group(1)?.trim();
-          
+
           // Parse model information (if available)
-          final modelMatch = RegExp(r'MODEL: (.+?)\r?\n', caseSensitive: false).firstMatch(resp);
+          final modelMatch = RegExp(
+            r'MODEL: (.+?)\r?\n',
+            caseSensitive: false,
+          ).firstMatch(resp);
           final model = modelMatch?.group(1)?.trim();
-          
+
           String? avTransportControlUrl;
           String? renderingControlUrl;
           if (location != null) {
@@ -50,7 +61,11 @@ Future<List<DiscoveredDevice>> scanDlnaRendererDevices({Duration timeout = const
               avTransportControlUrl = urls[0];
               renderingControlUrl = urls[1];
             } catch (e) {
-              await logger.error('errors.parse_control_urls_failed', tag: 'SSDP', error: e);
+              await logger.error(
+                'errors.parse_control_urls_failed',
+                tag: 'SSDP',
+                error: e,
+              );
             }
           }
           if (!responses.containsKey(ip)) {
@@ -62,12 +77,16 @@ Future<List<DiscoveredDevice>> scanDlnaRendererDevices({Duration timeout = const
               renderingControlUrl: renderingControlUrl,
               model: model,
             );
-            await logger.info('info.found_dlna_renderer', tag: 'SSDP', params: {
-              'name': device.name,
-              'ip': device.ip,
-              'model': device.model ?? 'unknown',
-              'location': device.location
-            });
+            await logger.info(
+              'info.found_dlna_renderer',
+              tag: 'SSDP',
+              params: {
+                'name': device.name,
+                'ip': device.ip,
+                'model': device.model ?? 'unknown',
+                'location': device.location,
+              },
+            );
             responses[ip] = device;
           }
         }
@@ -81,16 +100,25 @@ Future<List<DiscoveredDevice>> scanDlnaRendererDevices({Duration timeout = const
   });
   await completer.future;
   devices.addAll(responses.values);
-  await logger.info('info.dlna_renderer_scan_complete', tag: 'SSDP', params: {'count': devices.length});
+  await logger.info(
+    'info.dlna_renderer_scan_complete',
+    tag: 'SSDP',
+    params: {'count': devices.length},
+  );
   return devices;
 }
 
 /// Scan for DLNA Media Server devices in the local network (using SSDP/UPnP)
-Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({Duration timeout = const Duration(seconds: 3)}) async {
+Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({
+  Duration timeout = const Duration(seconds: 3),
+}) async {
   final logger = AppLogger();
   await logger.info('info.start_dlna_server_scan', tag: 'SSDP');
   final List<DiscoveredDevice> devices = [];
-  final RawDatagramSocket socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+  final RawDatagramSocket socket = await RawDatagramSocket.bind(
+    InternetAddress.anyIPv4,
+    0,
+  );
   // SSDP discovery message specifically for Media Server
   const String ssdpRequest =
       'M-SEARCH * HTTP/1.1\r\n'
@@ -115,13 +143,19 @@ Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({Duration timeout = co
           final nameMatch = RegExp(r'\nSERVER: (.+)').firstMatch(resp);
           final name = nameMatch?.group(1) ?? 'DLNA Media Server';
           // Parse LOCATION field
-          final locationMatch = RegExp(r'LOCATION:\s*(.+)\r?\n', caseSensitive: false).firstMatch(resp);
+          final locationMatch = RegExp(
+            r'LOCATION:\s*(.+)\r?\n',
+            caseSensitive: false,
+          ).firstMatch(resp);
           final location = locationMatch?.group(1)?.trim();
-          
+
           // Parse model information (if available)
-          final modelMatch = RegExp(r'MODEL: (.+?)\r?\n', caseSensitive: false).firstMatch(resp);
+          final modelMatch = RegExp(
+            r'MODEL: (.+?)\r?\n',
+            caseSensitive: false,
+          ).firstMatch(resp);
           final model = modelMatch?.group(1)?.trim();
-          
+
           if (!responses.containsKey(ip) && location != null) {
             final device = DiscoveredDevice.fromDlnaMediaServer(
               name: name,
@@ -129,12 +163,16 @@ Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({Duration timeout = co
               location: location,
               model: model,
             );
-            await logger.info('info.found_dlna_server', tag: 'SSDP', params: {
-              'name': device.name,
-              'ip': device.ip,
-              'model': device.model ?? 'unknown',
-              'location': device.location
-            });
+            await logger.info(
+              'info.found_dlna_server',
+              tag: 'SSDP',
+              params: {
+                'name': device.name,
+                'ip': device.ip,
+                'model': device.model ?? 'unknown',
+                'location': device.location,
+              },
+            );
             responses[ip] = device;
           }
         }
@@ -148,18 +186,28 @@ Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({Duration timeout = co
   });
   await completer.future;
   devices.addAll(responses.values);
-  await logger.info('info.dlna_server_scan_complete', tag: 'SSDP', params: {'count': devices.length});
+  await logger.info(
+    'info.dlna_server_scan_complete',
+    tag: 'SSDP',
+    params: {'count': devices.length},
+  );
   return devices;
 }
 
 /// Scan for all DLNA devices (including Renderers and Media Servers)
-Future<List<DiscoveredDevice>> scanAllDlnaDevices({Duration timeout = const Duration(seconds: 3)}) async {
+Future<List<DiscoveredDevice>> scanAllDlnaDevices({
+  Duration timeout = const Duration(seconds: 3),
+}) async {
   final logger = AppLogger();
   await logger.info('info.start_all_dlna_scan', tag: 'SSDP');
   final renderers = await scanDlnaRendererDevices(timeout: timeout);
   final mediaServers = await scanDlnaMediaServerDevices(timeout: timeout);
-  
+
   final devices = [...renderers, ...mediaServers];
-  await logger.info('info.all_dlna_scan_complete', tag: 'SSDP', params: {'count': devices.length});
+  await logger.info(
+    'info.all_dlna_scan_complete',
+    tag: 'SSDP',
+    params: {'count': devices.length},
+  );
   return devices;
 }

@@ -5,10 +5,10 @@ import 'localization_manager.dart';
 
 /// 日誌級別設定
 enum AppLogLevel {
-  debug,  // 調試模式
-  info,   // 信息
+  debug, // 調試模式
+  info, // 信息
   warning, // 警告
-  error   // 錯誤
+  error, // 錯誤
 }
 
 /// 日誌輸出通道
@@ -19,14 +19,14 @@ class StderrSink implements LogSink {
   // ANSI 顏色代碼
   static const String _resetColor = '\x1b[0m';
   static const String _debugColor = '\x1b[36m'; // 青色
-  static const String _infoColor = '\x1b[32m';  // 綠色
-  static const String _warningColor = '\x1b[33m'; // 黃色 
+  static const String _infoColor = '\x1b[32m'; // 綠色
+  static const String _warningColor = '\x1b[33m'; // 黃色
   static const String _errorColor = '\x1b[31m'; // 紅色
 
   @override
   Future<void> write(String message, LogLevel level) async {
     String color;
-    
+
     // 根據日誌級別設置顏色
     switch (level) {
       case LogLevel.debug:
@@ -49,7 +49,7 @@ class StderrSink implements LogSink {
     //stderr.writeln('$color$prefix$_resetColor $message');
     stderr.writeln('$color$message$_resetColor');
   }
-  
+
   @override
   Future<void> dispose() async {
     // 無需處理
@@ -90,7 +90,7 @@ class AppSink implements LogSink {
     // 目前暫時使用stdout
     stdout.writeln(message);
   }
-  
+
   @override
   Future<void> dispose() async {
     // 無需處理
@@ -104,22 +104,22 @@ class AppLogger {
 
   // 當前啟用的輸出通道
   Set<LoggerOutput> _outputs = {LoggerOutput.stderr};
-  
+
   // 最低日誌級別
   AppLogLevel _minLevel = AppLogLevel.info;
-  
+
   // 是否為移動平台
   bool _isMobilePlatform = false;
-  
+
   // 是否已初始化
   bool _initialized = false;
-  
+
   // 本地化管理器實例
   final _localization = LocalizationManager();
 
   // 廣播型 LogSink
   BroadcastSink? _broadcastSink;
-  
+
   AppLogger._internal() {
     // 根據平台設置標識
     try {
@@ -129,19 +129,19 @@ class AppLogger {
       _isMobilePlatform = false;
     }
   }
-  
+
   /// 初始化日誌系統
   Future<void> init() async {
     if (_initialized) {
       // 如果已初始化，先釋放資源
       await dispose();
     }
-    
+
     // 初始化本地化管理器
     await _localization.init();
-    
+
     List<LogSink> sinks = [];
-    
+
     if (_outputs.contains(LoggerOutput.stderr)) {
       sinks.add(StderrSink());
     }
@@ -152,7 +152,7 @@ class AppLogger {
       _broadcastSink ??= BroadcastSink();
       sinks.add(_broadcastSink!);
     }
-    
+
     LogLevel minLogcraftLevel;
     switch (_minLevel) {
       case AppLogLevel.debug:
@@ -168,16 +168,18 @@ class AppLogger {
         minLogcraftLevel = LogLevel.error;
         break;
     }
-    
-    await Logger.init(LoggerConfig(
-      sinks: sinks,
-      initialLevel: minLogcraftLevel,
-      environment: Environment.development,
-    ));
-    
+
+    await Logger.init(
+      LoggerConfig(
+        sinks: sinks,
+        initialLevel: minLogcraftLevel,
+        environment: Environment.development,
+      ),
+    );
+
     _initialized = true;
   }
-  
+
   /// 設定啟用哪些輸出通道
   void setOutputs(Set<LoggerOutput> outputs) {
     _outputs = outputs;
@@ -195,7 +197,7 @@ class AppLogger {
 
   /// 取得 log 廣播 stream（可 null）
   Stream<LogRecord>? get broadcastStream => _broadcastSink?.stream;
-  
+
   /// 如果已初始化，重新初始化日誌系統
   void _reinitializeIfNeeded() {
     if (_initialized) {
@@ -205,23 +207,27 @@ class AppLogger {
       });
     }
   }
-  
+
   /// 獲取當前最低日誌級別
   AppLogLevel get minLevel => _minLevel;
-  
+
   /// 確保日誌系統已初始化
   Future<void> _ensureInitialized() async {
     if (!_initialized) {
       await init();
     }
   }
-  
+
   /// 記錄調試信息
-  Future<void> debug(String message, {String? tag, Map<String, dynamic>? params}) async {
+  Future<void> debug(
+    String message, {
+    String? tag,
+    Map<String, dynamic>? params,
+  }) async {
     await _ensureInitialized();
-    
+
     if (_minLevel.index > AppLogLevel.debug.index) return;
-    
+
     // 如果訊息是本地化鍵，先翻譯它
     String translatedMessage = message;
     if (message.contains('.') && !message.contains(' ')) {
@@ -234,17 +240,22 @@ class AppLogger {
       // 如果提供了參數但訊息不是本地化鍵，直接格式化
       translatedMessage = _formatMessage(message, params);
     }
-    
-    final taggedMessage = tag != null ? '[$tag] $translatedMessage' : translatedMessage;
+
+    final taggedMessage =
+        tag != null ? '[$tag] $translatedMessage' : translatedMessage;
     await Logger.debug(taggedMessage);
   }
-  
+
   /// 記錄一般信息
-  Future<void> info(String message, {String? tag, Map<String, dynamic>? params}) async {
+  Future<void> info(
+    String message, {
+    String? tag,
+    Map<String, dynamic>? params,
+  }) async {
     await _ensureInitialized();
-    
+
     if (_minLevel.index > AppLogLevel.info.index) return;
-    
+
     // 如果訊息是本地化鍵，先翻譯它
     String translatedMessage = message;
     if (message.contains('.') && !message.contains(' ')) {
@@ -257,17 +268,22 @@ class AppLogger {
       // 如果提供了參數但訊息不是本地化鍵，直接格式化
       translatedMessage = _formatMessage(message, params);
     }
-    
-    final taggedMessage = tag != null ? '[$tag] $translatedMessage' : translatedMessage;
+
+    final taggedMessage =
+        tag != null ? '[$tag] $translatedMessage' : translatedMessage;
     await Logger.info(taggedMessage);
   }
-  
+
   /// 記錄警告信息
-  Future<void> warning(String message, {String? tag, Map<String, dynamic>? params}) async {
+  Future<void> warning(
+    String message, {
+    String? tag,
+    Map<String, dynamic>? params,
+  }) async {
     await _ensureInitialized();
-    
+
     if (_minLevel.index > AppLogLevel.warning.index) return;
-    
+
     // 如果訊息是本地化鍵，先翻譯它
     String translatedMessage = message;
     if (message.contains('.') && !message.contains(' ')) {
@@ -280,17 +296,24 @@ class AppLogger {
       // 如果提供了參數但訊息不是本地化鍵，直接格式化
       translatedMessage = _formatMessage(message, params);
     }
-    
-    final taggedMessage = tag != null ? '[$tag] $translatedMessage' : translatedMessage;
+
+    final taggedMessage =
+        tag != null ? '[$tag] $translatedMessage' : translatedMessage;
     await Logger.warning(taggedMessage);
   }
-  
+
   /// 記錄錯誤信息
-  Future<void> error(String message, {String? tag, Object? error, StackTrace? stackTrace, Map<String, dynamic>? params}) async {
+  Future<void> error(
+    String message, {
+    String? tag,
+    Object? error,
+    StackTrace? stackTrace,
+    Map<String, dynamic>? params,
+  }) async {
     await _ensureInitialized();
-    
+
     if (_minLevel.index > AppLogLevel.error.index) return;
-    
+
     // 如果訊息是本地化鍵，先翻譯它
     String translatedMessage = message;
     if (message.contains('.') && !message.contains(' ')) {
@@ -303,16 +326,17 @@ class AppLogger {
       // 如果提供了參數但訊息不是本地化鍵，直接格式化
       translatedMessage = _formatMessage(message, params);
     }
-    
+
     // 如果有錯誤對象，將其添加到參數中
     if (error != null) {
       translatedMessage = '$translatedMessage: $error';
     }
-    
-    final taggedMessage = tag != null ? '[$tag] $translatedMessage' : translatedMessage;
+
+    final taggedMessage =
+        tag != null ? '[$tag] $translatedMessage' : translatedMessage;
     await Logger.error(taggedMessage, error, stackTrace);
   }
-  
+
   /// 簡單的訊息格式化方法
   String _formatMessage(String message, Map<String, dynamic> params) {
     String result = message;
@@ -321,13 +345,13 @@ class AppLogger {
     });
     return result;
   }
-  
+
   /// 輸出JSON數據到標準輸出
   void outputJson(String jsonString) {
     // JSON輸出總是發送到stdout，無論處於什麼模式
     stdout.writeln(jsonString);
   }
-  
+
   /// 釋放資源
   Future<void> dispose() async {
     if (_initialized) {
@@ -337,7 +361,7 @@ class AppLogger {
     await _broadcastSink?.dispose();
     _broadcastSink = null;
   }
-  
+
   /// 是否為移動平台
   bool get isMobilePlatform => _isMobilePlatform;
 }

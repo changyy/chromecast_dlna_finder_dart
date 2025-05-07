@@ -77,21 +77,30 @@
   final json = &lt;String, dynamic&gt;{};
 
   &#47;&#47; Process each device type
-  json[&#39;chromecast&#39;] = result[&#39;chromecast&#39;]!.map((device) =&gt; device.toJson()).toList();
-  json[&#39;chromecast_dongle&#39;] = result[&#39;chromecast_dongle&#39;]!.map((device) =&gt; device.toJson()).toList();
-  json[&#39;chromecast_audio&#39;] = result[&#39;chromecast_audio&#39;]!.map((device) =&gt; device.toJson()).toList();
+  json[&#39;chromecast&#39;] =
+      result[&#39;chromecast&#39;]!.map((device) =&gt; device.toJson()).toList();
+  json[&#39;chromecast_dongle&#39;] =
+      result[&#39;chromecast_dongle&#39;]!.map((device) =&gt; device.toJson()).toList();
+  json[&#39;chromecast_audio&#39;] =
+      result[&#39;chromecast_audio&#39;]!.map((device) =&gt; device.toJson()).toList();
   json[&#39;dlna&#39;] = result[&#39;dlna&#39;]!.map((device) =&gt; device.toJson()).toList();
-  json[&#39;dlna_renderer&#39;] = result[&#39;dlna_renderer&#39;]!.map((device) =&gt; device.toJson()).toList();
-  json[&#39;dlna_media_server&#39;] = result[&#39;dlna_media_server&#39;]!.map((device) =&gt; device.toJson()).toList();
+  json[&#39;dlna_renderer&#39;] =
+      result[&#39;dlna_renderer&#39;]!.map((device) =&gt; device.toJson()).toList();
+  json[&#39;dlna_media_server&#39;] =
+      result[&#39;dlna_media_server&#39;]!.map((device) =&gt; device.toJson()).toList();
 
   json[&#39;count&#39;] = {
     &#39;tx&#39;: result[&#39;dlna_media_server&#39;]!.length,
     &#39;rx&#39;: result[&#39;chromecast&#39;]!.length + result[&#39;dlna_renderer&#39;]!.length,
-    &#39;total&#39;: result[&#39;chromecast&#39;]!.length + result[&#39;dlna_renderer&#39;]!.length + result[&#39;dlna_media_server&#39;]!.length,
+    &#39;total&#39;:
+        result[&#39;chromecast&#39;]!.length +
+        result[&#39;dlna_renderer&#39;]!.length +
+        result[&#39;dlna_media_server&#39;]!.length,
   };
 
   &#47;&#47; Process errors
-  json[&#39;error&#39;] = result[&#39;errors&#39;]?.map((device) =&gt; device.name).toList() ?? [];
+  json[&#39;error&#39;] =
+      result[&#39;errors&#39;]?.map((device) =&gt; device.name).toList() ?? [];
   json[&#39;status&#39;] = (result[&#39;errors&#39;]?.isEmpty ?? true);
 
   return json;
@@ -123,7 +132,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.0
+      1.0.3
   </span>
   
 </footer>

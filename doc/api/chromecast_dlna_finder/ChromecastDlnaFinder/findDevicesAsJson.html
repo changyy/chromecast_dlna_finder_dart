@@ -78,7 +78,10 @@
 }) async {
   final devices = await findDevices(timeout: timeout);
   final json = _discoveryService.toJson(devices);
-  await _logger.debug(&#39;Generated JSON data: ${json.keys.length} main fields&#39;, tag: &#39;Finder&#39;);
+  await _logger.debug(
+    &#39;Generated JSON data: ${json.keys.length} main fields&#39;,
+    tag: &#39;Finder&#39;,
+  );
   return json;
 }</code></pre>
 </section>
@@ -108,7 +111,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.0
+      1.0.3
   </span>
   
 </footer>

@@ -1,4 +1,4 @@
-## 1.1.0
+## 1.0.3
 
 - Major refactor of logger system: removed LogMode/suppressOutput, now uses setOutputs({LoggerOutput.stderr, ...}) for flexible log output control (stderr, stdout, broadcast, or silent).
 - Support for logger broadcast stream for app/Flutter UI log listening.
@@ -10,6 +10,3 @@
 - Test suite updated to match new logger API and i18n logic.
 - Various bug fixes and code cleanups.
 
-## 1.0.0
-
-- Initial version.

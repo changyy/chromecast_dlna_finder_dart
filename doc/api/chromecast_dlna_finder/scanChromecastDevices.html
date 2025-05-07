@@ -81,16 +81,37 @@
   try {
     &#47;&#47; Try standard mDNS port, explicitly set reuseAddress=true and reusePort=true
     &#47;&#47; This allows binding even if other processes are already listening
-    client = MDnsClient(rawDatagramSocketFactory: (dynamic host, int port, {bool? reuseAddress, bool? reusePort, int? ttl}) {
-      return RawDatagramSocket.bind(host, port, reuseAddress: true, reusePort: true, ttl: ttl ?? 1);
-    });
+    client = MDnsClient(
+      rawDatagramSocketFactory: (
+        dynamic host,
+        int port, {
+        bool? reuseAddress,
+        bool? reusePort,
+        int? ttl,
+      }) {
+        return RawDatagramSocket.bind(
+          host,
+          port,
+          reuseAddress: true,
+          reusePort: true,
+          ttl: ttl ?? 1,
+        );
+      },
+    );
     await client.start();
     await logger.info(&#39;info.standard_mdns_port&#39;, tag: &#39;mDNS&#39;);
   } on SocketException catch (e) {
     if (e.osError?.errorCode == 48 || &#47;&#47; macOS&#47;Linux port in use
-        e.osError?.errorCode == 10048) { &#47;&#47; Windows port in use
-      await logger.error(&#39;errors.port_in_use&#39;, tag: &#39;mDNS&#39;, params: {&#39;port&#39;: e.port});
-      throw MdnsPortInUseException(&#39;mDNS port ${e.port} is in use, cannot scan for Chromecast devices&#39;);
+        e.osError?.errorCode == 10048) {
+      &#47;&#47; Windows port in use
+      await logger.error(
+        &#39;errors.port_in_use&#39;,
+        tag: &#39;mDNS&#39;,
+        params: {&#39;port&#39;: e.port},
+      );
+      throw MdnsPortInUseException(
+        &#39;mDNS port ${e.port} is in use, cannot scan for Chromecast devices&#39;,
+      );
     }
     rethrow;
   } catch (e) {
@@ -101,18 +122,34 @@
   &#47;&#47; Continue normal scanning process
   try {
     &#47;&#47; dns-sd -B _googlecast._tcp local
-    await for (final PtrResourceRecord ptr in client.lookup&lt;PtrResourceRecord&gt;(ResourceRecordQuery.serverPointer(&#39;_googlecast._tcp.local&#39;))) {
-      final serviceName = ptr.domainName; &#47;&#47; e.g. Chromecast-XXXXXX._googlecast._tcp.local
-      await for (final SrvResourceRecord srv in client.lookup&lt;SrvResourceRecord&gt;(ResourceRecordQuery.service(serviceName))) {
-        await logger.debug(&#39;debug.found_service&#39;, tag: &#39;mDNS&#39;, params: {
-          &#39;target&#39;: srv.target,
-          &#39;port&#39;: srv.port,
-          &#39;priority&#39;: srv.priority,
-          &#39;weight&#39;: srv.weight
-        });
-        await for (final IPAddressResourceRecord ip in client.lookup&lt;IPAddressResourceRecord&gt;(ResourceRecordQuery.addressIPv4(srv.target))) {
+    await for (final PtrResourceRecord ptr in client.lookup&lt;PtrResourceRecord&gt;(
+      ResourceRecordQuery.serverPointer(&#39;_googlecast._tcp.local&#39;),
+    )) {
+      final serviceName =
+          ptr.domainName; &#47;&#47; e.g. Chromecast-XXXXXX._googlecast._tcp.local
+      await for (final SrvResourceRecord srv in client
+          .lookup&lt;SrvResourceRecord&gt;(
+            ResourceRecordQuery.service(serviceName),
+          )) {
+        await logger.debug(
+          &#39;debug.found_service&#39;,
+          tag: &#39;mDNS&#39;,
+          params: {
+            &#39;target&#39;: srv.target,
+            &#39;port&#39;: srv.port,
+            &#39;priority&#39;: srv.priority,
+            &#39;weight&#39;: srv.weight,
+          },
+        );
+        await for (final IPAddressResourceRecord ip in client
+            .lookup&lt;IPAddressResourceRecord&gt;(
+              ResourceRecordQuery.addressIPv4(srv.target),
+            )) {
           &#47;&#47; Query TXT record
-          await for (final TxtResourceRecord txt in client.lookup&lt;TxtResourceRecord&gt;(ResourceRecordQuery.text(serviceName))) {
+          await for (final TxtResourceRecord txt in client
+              .lookup&lt;TxtResourceRecord&gt;(
+                ResourceRecordQuery.text(serviceName),
+              )) {
             final txtMap = &lt;String, String&gt;{};
             final dynamic txtRaw = txt.text;
 
@@ -128,13 +165,18 @@
             );
 
             &#47;&#47; Display different messages based on device type
-            final deviceType = device.isChromecastAudio ? &#39;Chromecast Audio&#39; : &#39;Chromecast&#39;;
-            await logger.info(&#39;info.found_device&#39;, tag: &#39;mDNS&#39;, params: {
-              &#39;deviceType&#39;: deviceType,
-              &#39;name&#39;: device.name,
-              &#39;ip&#39;: device.ip,
-              &#39;model&#39;: device.model
-            });
+            final deviceType =
+                device.isChromecastAudio ? &#39;Chromecast Audio&#39; : &#39;Chromecast&#39;;
+            await logger.info(
+              &#39;info.found_device&#39;,
+              tag: &#39;mDNS&#39;,
+              params: {
+                &#39;deviceType&#39;: deviceType,
+                &#39;name&#39;: device.name,
+                &#39;ip&#39;: device.ip,
+                &#39;model&#39;: device.model,
+              },
+            );
 
             devices.add(device);
           }
@@ -147,7 +189,11 @@
     client.stop();
   }
 
-  await logger.info(&#39;info.chromecast_scan_complete&#39;, tag: &#39;mDNS&#39;, params: {&#39;count&#39;: devices.length});
+  await logger.info(
+    &#39;info.chromecast_scan_complete&#39;,
+    tag: &#39;mDNS&#39;,
+    params: {&#39;count&#39;: devices.length},
+  );
   return devices;
 }</code></pre>
 </section>
@@ -176,7 +222,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.0
+      1.0.3
   </span>
   
 </footer>

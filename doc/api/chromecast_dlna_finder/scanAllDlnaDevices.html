@@ -73,14 +73,20 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanAllDlnaDevices({Duration timeout = const Duration(seconds: 3)}) async {
+  <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanAllDlnaDevices({
+  Duration timeout = const Duration(seconds: 3),
+}) async {
   final logger = AppLogger();
   await logger.info(&#39;info.start_all_dlna_scan&#39;, tag: &#39;SSDP&#39;);
   final renderers = await scanDlnaRendererDevices(timeout: timeout);
   final mediaServers = await scanDlnaMediaServerDevices(timeout: timeout);
 
   final devices = [...renderers, ...mediaServers];
-  await logger.info(&#39;info.all_dlna_scan_complete&#39;, tag: &#39;SSDP&#39;, params: {&#39;count&#39;: devices.length});
+  await logger.info(
+    &#39;info.all_dlna_scan_complete&#39;,
+    tag: &#39;SSDP&#39;,
+    params: {&#39;count&#39;: devices.length},
+  );
   return devices;
 }</code></pre>
 </section>
@@ -109,7 +115,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.0
+      1.0.3
   </span>
   
 </footer>

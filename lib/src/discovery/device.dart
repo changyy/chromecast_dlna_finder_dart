@@ -1,10 +1,10 @@
 /// 裝置資料結構
-enum DeviceType { 
-  dlnaRenderer, 
-  dlnaMediaServer, 
-  chromecastDongle, 
-  chromecastAudio, 
-  unknown 
+enum DeviceType {
+  dlnaRenderer,
+  dlnaMediaServer,
+  chromecastDongle,
+  chromecastAudio,
+  unknown,
 }
 
 class DiscoveredDevice {
@@ -36,11 +36,15 @@ class DiscoveredDevice {
     this.extra,
   });
 
-  bool get isDlnaRenderer => type == DeviceType.dlnaRenderer && avTransportControlUrl != null && renderingControlUrl != null;
+  bool get isDlnaRenderer =>
+      type == DeviceType.dlnaRenderer &&
+      avTransportControlUrl != null &&
+      renderingControlUrl != null;
   bool get isDlnaMediaServer => type == DeviceType.dlnaMediaServer;
   bool get isChromecastDongle => type == DeviceType.chromecastDongle;
   bool get isChromecastAudio => type == DeviceType.chromecastAudio;
-  bool get isChromecast => type == DeviceType.chromecastDongle || type == DeviceType.chromecastAudio;
+  bool get isChromecast =>
+      type == DeviceType.chromecastDongle || type == DeviceType.chromecastAudio;
 
   Map<String, dynamic> toJson() {
     return {
@@ -49,8 +53,10 @@ class DiscoveredDevice {
       'type': type.toString().split('.').last,
       if (model != null) 'model': model,
       if (location != null) 'location': location,
-      if (avTransportControlUrl != null) 'avTransportControlUrl': avTransportControlUrl,
-      if (renderingControlUrl != null) 'renderingControlUrl': renderingControlUrl,
+      if (avTransportControlUrl != null)
+        'avTransportControlUrl': avTransportControlUrl,
+      if (renderingControlUrl != null)
+        'renderingControlUrl': renderingControlUrl,
       if (id != null) 'id': id,
       if (friendlyName != null) 'friendlyName': friendlyName,
       if (port != null) 'port': port,
@@ -68,12 +74,12 @@ class DiscoveredDevice {
     // 判斷 Chromecast 類型
     DeviceType chromecastType = DeviceType.chromecastDongle;
     final model = txtMap['md']?.toLowerCase() ?? '';
-    
+
     // 根據型號判斷是否為 Audio 設備
     if (model.contains('audio') || model.contains('speaker')) {
       chromecastType = DeviceType.chromecastAudio;
     }
-    
+
     return DiscoveredDevice(
       name: txtMap['fn'] ?? serviceName,
       ip: ip,
@@ -86,7 +92,7 @@ class DiscoveredDevice {
       extra: txtMap,
     );
   }
-  
+
   /// DLNA Renderer 建構工廠
   factory DiscoveredDevice.fromDlnaRenderer({
     required String name,
@@ -106,7 +112,7 @@ class DiscoveredDevice {
       renderingControlUrl: renderingControlUrl,
     );
   }
-  
+
   /// DLNA Media Server 建構工廠
   factory DiscoveredDevice.fromDlnaMediaServer({
     required String name,

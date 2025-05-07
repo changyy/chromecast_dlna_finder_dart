@@ -57,6 +57,7 @@ Future<String?> fetchRenderingControlUrl(String descriptionUrl) async {
     return null;
   }
 }
+
 Future<List<String?>> fetchControlUrls(String descriptionUrl) async {
   final output = <String?>[null, null];
   try {

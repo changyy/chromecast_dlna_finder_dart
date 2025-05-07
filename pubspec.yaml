@@ -1,6 +1,6 @@
 name: chromecast_dlna_finder
 description: A Dart package for discovering Chromecast devices and DLNA renderers.
-version: 1.0.0
+version: 1.0.3
 homepage: https://github.com/changyy/chromecast_dlna_finder_dart
 repository: https://github.com/changyy/chromecast_dlna_finder_dart
 issue_tracker: https://github.com/changyy/chromecast_dlna_finder_dart

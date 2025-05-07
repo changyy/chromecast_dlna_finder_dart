@@ -83,7 +83,10 @@
   _logger.setOutputs(outputs);
   _logger.setMinLevel(minLevel);
   await _logger.init();
-  await _logger.info(&#39;Logging system configured: outputs=$outputs, minLevel=$minLevel&#39;, tag: &#39;Config&#39;);
+  await _logger.info(
+    &#39;Logging system configured: outputs=$outputs, minLevel=$minLevel&#39;,
+    tag: &#39;Config&#39;,
+  );
 }</code></pre>
 </section>
 
@@ -112,7 +115,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.0
+      1.0.3
   </span>
   
 </footer>

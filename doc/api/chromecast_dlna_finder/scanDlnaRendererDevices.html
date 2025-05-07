@@ -73,11 +73,16 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanDlnaRendererDevices({Duration timeout = const Duration(seconds: 3)}) async {
+  <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanDlnaRendererDevices({
+  Duration timeout = const Duration(seconds: 3),
+}) async {
   final logger = AppLogger();
   await logger.info(&#39;info.start_dlna_renderer_scan&#39;, tag: &#39;SSDP&#39;);
   final List&lt;DiscoveredDevice&gt; devices = [];
-  final RawDatagramSocket socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+  final RawDatagramSocket socket = await RawDatagramSocket.bind(
+    InternetAddress.anyIPv4,
+    0,
+  );
   &#47;&#47; SSDP discovery message
   const String ssdpRequest =
       &#39;M-SEARCH * HTTP&#47;1.1\r\n&#39;
@@ -102,11 +107,17 @@
           final nameMatch = RegExp(r&#39;\nSERVER: (.+)&#39;).firstMatch(resp);
           final name = nameMatch?.group(1) ?? &#39;DLNA Renderer&#39;;
           &#47;&#47; Parse LOCATION field
-          final locationMatch = RegExp(r&#39;LOCATION:\s*(.+)\r?\n&#39;, caseSensitive: false).firstMatch(resp);
+          final locationMatch = RegExp(
+            r&#39;LOCATION:\s*(.+)\r?\n&#39;,
+            caseSensitive: false,
+          ).firstMatch(resp);
           final location = locationMatch?.group(1)?.trim();
 
           &#47;&#47; Parse model information (if available)
-          final modelMatch = RegExp(r&#39;MODEL: (.+?)\r?\n&#39;, caseSensitive: false).firstMatch(resp);
+          final modelMatch = RegExp(
+            r&#39;MODEL: (.+?)\r?\n&#39;,
+            caseSensitive: false,
+          ).firstMatch(resp);
           final model = modelMatch?.group(1)?.trim();
 
           String? avTransportControlUrl;
@@ -117,7 +128,11 @@
               avTransportControlUrl = urls[0];
               renderingControlUrl = urls[1];
             } catch (e) {
-              await logger.error(&#39;errors.parse_control_urls_failed&#39;, tag: &#39;SSDP&#39;, error: e);
+              await logger.error(
+                &#39;errors.parse_control_urls_failed&#39;,
+                tag: &#39;SSDP&#39;,
+                error: e,
+              );
             }
           }
           if (!responses.containsKey(ip)) {
@@ -129,12 +144,16 @@
               renderingControlUrl: renderingControlUrl,
               model: model,
             );
-            await logger.info(&#39;info.found_dlna_renderer&#39;, tag: &#39;SSDP&#39;, params: {
-              &#39;name&#39;: device.name,
-              &#39;ip&#39;: device.ip,
-              &#39;model&#39;: device.model ?? &#39;unknown&#39;,
-              &#39;location&#39;: device.location
-            });
+            await logger.info(
+              &#39;info.found_dlna_renderer&#39;,
+              tag: &#39;SSDP&#39;,
+              params: {
+                &#39;name&#39;: device.name,
+                &#39;ip&#39;: device.ip,
+                &#39;model&#39;: device.model ?? &#39;unknown&#39;,
+                &#39;location&#39;: device.location,
+              },
+            );
             responses[ip] = device;
           }
         }
@@ -148,7 +167,11 @@
   });
   await completer.future;
   devices.addAll(responses.values);
-  await logger.info(&#39;info.dlna_renderer_scan_complete&#39;, tag: &#39;SSDP&#39;, params: {&#39;count&#39;: devices.length});
+  await logger.info(
+    &#39;info.dlna_renderer_scan_complete&#39;,
+    tag: &#39;SSDP&#39;,
+    params: {&#39;count&#39;: devices.length},
+  );
   return devices;
 }</code></pre>
 </section>
@@ -177,7 +200,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.0
+      1.0.3
   </span>
   
 </footer>

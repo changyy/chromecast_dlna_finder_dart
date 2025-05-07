@@ -74,7 +74,9 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Future&lt;Map&lt;String, List&lt;DiscoveredDevice&gt;&gt;&gt; discoverAllDevices({Duration timeout = const Duration(seconds: 5)}) async {
+  <pre class="language-dart"><code class="language-dart">Future&lt;Map&lt;String, List&lt;DiscoveredDevice&gt;&gt;&gt; discoverAllDevices({
+  Duration timeout = const Duration(seconds: 5),
+}) async {
   final result = &lt;String, List&lt;DiscoveredDevice&gt;&gt;{
     &#39;chromecast&#39;: [],
     &#39;dlna&#39;: [],
@@ -84,29 +86,48 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
 
   try {
     &#47;&#47; Asynchronously scan Chromecast devices
-    final chromecastTask = scanChromecastDevices().then((devices) {
-      result[&#39;chromecast&#39;] = devices;
-    }).catchError((e) async {
-      await _logger.error(&#39;errors.chromecast_scan_error&#39;, tag: &#39;Discovery&#39;, error: e, params: {&#39;error&#39;: e.toString()});
-      if (e is MdnsPortInUseException) {
-        errors.add(&#39;errors.mdns_port_in_use&#39;);
-      } else {
-        errors.add(&#39;errors.chromecast_scan_error&#39;);
-      }
-    });
+    final chromecastTask = scanChromecastDevices()
+        .then((devices) {
+          result[&#39;chromecast&#39;] = devices;
+        })
+        .catchError((e) async {
+          await _logger.error(
+            &#39;errors.chromecast_scan_error&#39;,
+            tag: &#39;Discovery&#39;,
+            error: e,
+            params: {&#39;error&#39;: e.toString()},
+          );
+          if (e is MdnsPortInUseException) {
+            errors.add(&#39;errors.mdns_port_in_use&#39;);
+          } else {
+            errors.add(&#39;errors.chromecast_scan_error&#39;);
+          }
+        });
 
     &#47;&#47; Asynchronously scan DLNA devices
-    final dlnaTask = scanAllDlnaDevices(timeout: timeout).then((devices) {
-      result[&#39;dlna&#39;] = devices;
-    }).catchError((e) async {
-      await _logger.error(&#39;errors.dlna_scan_error&#39;, tag: &#39;Discovery&#39;, error: e, params: {&#39;error&#39;: e.toString()});
-      errors.add(&#39;errors.dlna_scan_error&#39;);
-    });
+    final dlnaTask = scanAllDlnaDevices(timeout: timeout)
+        .then((devices) {
+          result[&#39;dlna&#39;] = devices;
+        })
+        .catchError((e) async {
+          await _logger.error(
+            &#39;errors.dlna_scan_error&#39;,
+            tag: &#39;Discovery&#39;,
+            error: e,
+            params: {&#39;error&#39;: e.toString()},
+          );
+          errors.add(&#39;errors.dlna_scan_error&#39;);
+        });
 
     &#47;&#47; Wait for all scans to complete
     await Future.wait([chromecastTask, dlnaTask]);
   } catch (e) {
-    await _logger.error(&#39;errors.unexpected_scan_error&#39;, tag: &#39;Discovery&#39;, error: e, params: {&#39;error&#39;: e.toString()});
+    await _logger.error(
+      &#39;errors.unexpected_scan_error&#39;,
+      tag: &#39;Discovery&#39;,
+      error: e,
+      params: {&#39;error&#39;: e.toString()},
+    );
     errors.add(&#39;errors.unexpected_scan_error&#39;);
   }
 
@@ -141,13 +162,18 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
   result[&#39;dlna_media_server&#39;] = dlnaMediaServers;
 
   &#47;&#47; Add error information
-  result[&#39;errors&#39;] = errors.map((e) =&gt; DiscoveredDevice(
-    name: e,
-    ip: &#39;&#39;,
-    type: DeviceType.unknown,
-  )).toList();
+  result[&#39;errors&#39;] =
+      errors
+          .map(
+            (e) =&gt;
+                DiscoveredDevice(name: e, ip: &#39;&#39;, type: DeviceType.unknown),
+          )
+          .toList();
 
-  await _logger.debug(&#39;Device discovery complete: Chromecast=${result[&#39;chromecast&#39;]!.length}, DLNA=${result[&#39;dlna&#39;]!.length}, Errors=${errors.length}&#39;, tag: &#39;Discovery&#39;);
+  await _logger.debug(
+    &#39;Device discovery complete: Chromecast=${result[&#39;chromecast&#39;]!.length}, DLNA=${result[&#39;dlna&#39;]!.length}, Errors=${errors.length}&#39;,
+    tag: &#39;Discovery&#39;,
+  );
 
   return result;
 }</code></pre>
@@ -178,7 +204,7 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.0
+      1.0.3
   </span>
   
 </footer>

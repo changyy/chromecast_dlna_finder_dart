@@ -50,17 +50,23 @@ Future<List<DiscoveredDevice>> mockScanChromecastDevices() async {
 }
 
 // Mock scanDlnaRendererDevices function
-Future<List<DiscoveredDevice>> mockScanDlnaRendererDevices({Duration timeout = const Duration(seconds: 3)}) async {
+Future<List<DiscoveredDevice>> mockScanDlnaRendererDevices({
+  Duration timeout = const Duration(seconds: 3),
+}) async {
   return mockDlnaRenderers;
 }
 
 // Mock scanDlnaMediaServerDevices function
-Future<List<DiscoveredDevice>> mockScanDlnaMediaServerDevices({Duration timeout = const Duration(seconds: 3)}) async {
+Future<List<DiscoveredDevice>> mockScanDlnaMediaServerDevices({
+  Duration timeout = const Duration(seconds: 3),
+}) async {
   return mockDlnaMediaServers;
 }
 
 // Mock scanAllDlnaDevices function
-Future<List<DiscoveredDevice>> mockScanAllDlnaDevices({Duration timeout = const Duration(seconds: 3)}) async {
+Future<List<DiscoveredDevice>> mockScanAllDlnaDevices({
+  Duration timeout = const Duration(seconds: 3),
+}) async {
   return [...mockDlnaRenderers, ...mockDlnaMediaServers];
 }
 
@@ -69,62 +75,68 @@ void main() {
     setUp(() async {
       // 移除未使用的 AppLogger 初始化
     });
-    
+
     test('Chromecast scan test', () async {
       final devices = await mockScanChromecastDevices();
-      
+
       expect(devices.length, equals(2));
       expect(devices[0].name, equals('Living Room Chromecast'));
       expect(devices[0].type, equals(DeviceType.chromecastDongle));
       expect(devices[1].name, equals('Kitchen Speaker'));
       expect(devices[1].type, equals(DeviceType.chromecastAudio));
     });
-    
+
     test('DLNA Renderer scan test', () async {
       final devices = await mockScanDlnaRendererDevices();
-      
+
       expect(devices.length, equals(1));
       expect(devices[0].name, equals('Living Room TV'));
       expect(devices[0].type, equals(DeviceType.dlnaRenderer));
       expect(devices[0].avTransportControlUrl, isNotNull);
       expect(devices[0].renderingControlUrl, isNotNull);
     });
-    
+
     test('DLNA Media Server scan test', () async {
       final devices = await mockScanDlnaMediaServerDevices();
-      
+
       expect(devices.length, equals(1));
       expect(devices[0].name, equals('Media NAS'));
       expect(devices[0].type, equals(DeviceType.dlnaMediaServer));
       expect(devices[0].location, isNotNull);
     });
-    
+
     test('All DLNA devices scan test', () async {
       final devices = await mockScanAllDlnaDevices();
-      
+
       expect(devices.length, equals(2));
-      expect(devices.where((d) => d.type == DeviceType.dlnaRenderer).length, equals(1));
-      expect(devices.where((d) => d.type == DeviceType.dlnaMediaServer).length, equals(1));
+      expect(
+        devices.where((d) => d.type == DeviceType.dlnaRenderer).length,
+        equals(1),
+      );
+      expect(
+        devices.where((d) => d.type == DeviceType.dlnaMediaServer).length,
+        equals(1),
+      );
     });
-    
+
     test('Device type validation test', () async {
       final chromecastDevices = await mockScanChromecastDevices();
       final dlnaRenderers = await mockScanDlnaRendererDevices();
       final dlnaMediaServers = await mockScanDlnaMediaServerDevices();
-      
+
       // Test Chromecast type checks
       expect(chromecastDevices[0].isChromecast, isTrue);
       expect(chromecastDevices[0].isChromecastDongle, isTrue);
       expect(chromecastDevices[0].isChromecastAudio, isFalse);
-      
+
       expect(chromecastDevices[1].isChromecast, isTrue);
       expect(chromecastDevices[1].isChromecastDongle, isFalse);
       expect(chromecastDevices[1].isChromecastAudio, isTrue);
-      
+
       // Test DLNA type checks
       expect(dlnaRenderers[0].isDlnaRenderer, isTrue);
       expect(dlnaRenderers[0].isDlnaMediaServer, isFalse);
-      
+
       expect(dlnaMediaServers[0].isDlnaRenderer, isFalse);
       expect(dlnaMediaServers[0].isDlnaMediaServer, isTrue);
     });
