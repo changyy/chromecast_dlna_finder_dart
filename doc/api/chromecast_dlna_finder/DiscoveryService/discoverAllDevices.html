@@ -131,6 +131,95 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
     errors.add(&#39;errors.unexpected_scan_error&#39;);
   }
 
+  &#47;&#47; 去除重複裝置
+  &#47;&#47; 建立一個臨時Map來檢查裝置是否重複，使用更可靠的識別方式
+  final uniqueDevices = &lt;String, DiscoveredDevice&gt;{};
+  final duplicates = &lt;DiscoveredDevice&gt;[];
+
+  &#47;&#47; 生成更可靠的裝置唯一識別鍵
+  String getDeviceKey(DiscoveredDevice device) {
+    &#47;&#47; 如果 Chromecast 裝置有 ID，優先使用
+    if (device.isChromecast &amp;&amp; device.id != null) {
+      return &#39;chromecast_${device.id}&#39;;
+    }
+
+    &#47;&#47; 如果有 location，結合 IP 和 location 作為識別
+    if (device.location != null) {
+      &#47;&#47; 對於 DLNA renderer，加上控制 URL 以更精確識別
+      if (device.isDlnaRenderer &amp;&amp; device.avTransportControlUrl != null) {
+        return &#39;dlna_${device.location}_${device.avTransportControlUrl}&#39;;
+      }
+      return &#39;device_${device.type}_${device.location}&#39;;
+    }
+
+    &#47;&#47; 如果 model 非空，結合 name、IP 和 model
+    if (device.model != null) {
+      return &#39;device_${device.name}_${device.ip}_${device.model}&#39;;
+    }
+
+    &#47;&#47; 最後的退路：使用名稱+IP+類型的組合
+    return &#39;device_${device.name}_${device.ip}_${device.type}&#39;;
+  }
+
+  &#47;&#47; 處理 Chromecast 裝置
+  for (final device in result[&#39;chromecast&#39;]!) {
+    final key = getDeviceKey(device);
+    if (uniqueDevices.containsKey(key)) {
+      await _logger.debug(
+        &#39;debug.duplicate_device&#39;,
+        tag: &#39;Discovery&#39;,
+        params: {
+          &#39;type&#39;: &#39;Chromecast&#39;,
+          &#39;name&#39;: device.name,
+          &#39;ip&#39;: device.ip,
+          &#39;key&#39;: key,
+        },
+      );
+      duplicates.add(device);
+    } else {
+      uniqueDevices[key] = device;
+    }
+  }
+
+  &#47;&#47; 處理 DLNA 裝置
+  for (final device in result[&#39;dlna&#39;]!) {
+    final key = getDeviceKey(device);
+    if (uniqueDevices.containsKey(key)) {
+      await _logger.debug(
+        &#39;debug.duplicate_device&#39;,
+        tag: &#39;Discovery&#39;,
+        params: {
+          &#39;type&#39;: &#39;DLNA&#39;,
+          &#39;name&#39;: device.name,
+          &#39;ip&#39;: device.ip,
+          &#39;key&#39;: key,
+        },
+      );
+      duplicates.add(device);
+    } else {
+      uniqueDevices[key] = device;
+    }
+  }
+
+  &#47;&#47; 更新結果中的裝置清單，移除重複項
+  if (duplicates.isNotEmpty) {
+    await _logger.info(
+      &#39;info.removed_duplicate_devices&#39;,
+      tag: &#39;Discovery&#39;,
+      params: {&#39;count&#39;: duplicates.length},
+    );
+
+    &#47;&#47; 從所有列表中移除重複裝置
+    result[&#39;chromecast&#39;] =
+        result[&#39;chromecast&#39;]!
+            .where((device) =&gt; !duplicates.contains(device))
+            .toList();
+    result[&#39;dlna&#39;] =
+        result[&#39;dlna&#39;]!
+            .where((device) =&gt; !duplicates.contains(device))
+            .toList();
+  }
+
   &#47;&#47; Categorize Chromecast devices by type
   final chromecastDongles = &lt;DiscoveredDevice&gt;[];
   final chromecastAudios = &lt;DiscoveredDevice&gt;[];
@@ -204,7 +293,7 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.4
+      1.0.5
   </span>
   
 </footer>

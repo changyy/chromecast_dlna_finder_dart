@@ -1,3 +1,9 @@
+## 1.0.5
+
+- Implemented device duplication detection mechanism to ensure each device appears only once in results
+- Added device ID-based duplication detection during mDNS scanning to solve the issue of multiple responses from the same Chromecast device
+
+
 ## 1.0.4
 
 - Enhanced localization file path detection for various usage scenarios (global CLI, library dependency, Flutter app)

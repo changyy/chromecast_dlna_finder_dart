@@ -16,6 +16,8 @@ Future<List<DiscoveredDevice>> scanChromecastDevices() async {
   final logger = AppLogger();
   await logger.info('info.start_chromecast_scan', tag: 'mDNS');
   final List<DiscoveredDevice> devices = [];
+  // 使用 Map 來追蹤已發現的裝置，避免重複
+  final deviceMap = <String, DiscoveredDevice>{};
   MDnsClient? client;
 
   try {
@@ -104,6 +106,22 @@ Future<List<DiscoveredDevice>> scanChromecastDevices() async {
               txtMap: txtMap,
             );
 
+            // 取得裝置 ID，若不存在則使用 IP 與名稱組合
+            final deviceId = device.id ?? '${device.ip}_${device.name}';
+
+            // 檢查是否已經有相同裝置
+            if (deviceMap.containsKey(deviceId)) {
+              await logger.debug(
+                'debug.duplicate_device',
+                tag: 'mDNS',
+                params: {'id': deviceId, 'name': device.name, 'ip': device.ip},
+              );
+              continue; // 跳過重複裝置
+            }
+
+            // 加入到裝置映射表
+            deviceMap[deviceId] = device;
+
             // Display different messages based on device type
             final deviceType =
                 device.isChromecastAudio ? 'Chromecast Audio' : 'Chromecast';
@@ -117,8 +135,6 @@ Future<List<DiscoveredDevice>> scanChromecastDevices() async {
                 'model': device.model,
               },
             );
-
-            devices.add(device);
           }
         }
       }
@@ -128,6 +144,9 @@ Future<List<DiscoveredDevice>> scanChromecastDevices() async {
   } finally {
     client.stop();
   }
+
+  // 從映射表中取出不重複的裝置
+  devices.addAll(deviceMap.values);
 
   await logger.info(
     'info.chromecast_scan_complete',

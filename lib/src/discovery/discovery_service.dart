@@ -68,6 +68,95 @@ class DiscoveryService {
       errors.add('errors.unexpected_scan_error');
     }
 
+    // 去除重複裝置
+    // 建立一個臨時Map來檢查裝置是否重複，使用更可靠的識別方式
+    final uniqueDevices = <String, DiscoveredDevice>{};
+    final duplicates = <DiscoveredDevice>[];
+
+    // 生成更可靠的裝置唯一識別鍵
+    String getDeviceKey(DiscoveredDevice device) {
+      // 如果 Chromecast 裝置有 ID，優先使用
+      if (device.isChromecast && device.id != null) {
+        return 'chromecast_${device.id}';
+      }
+
+      // 如果有 location，結合 IP 和 location 作為識別
+      if (device.location != null) {
+        // 對於 DLNA renderer，加上控制 URL 以更精確識別
+        if (device.isDlnaRenderer && device.avTransportControlUrl != null) {
+          return 'dlna_${device.location}_${device.avTransportControlUrl}';
+        }
+        return 'device_${device.type}_${device.location}';
+      }
+
+      // 如果 model 非空，結合 name、IP 和 model
+      if (device.model != null) {
+        return 'device_${device.name}_${device.ip}_${device.model}';
+      }
+
+      // 最後的退路：使用名稱+IP+類型的組合
+      return 'device_${device.name}_${device.ip}_${device.type}';
+    }
+
+    // 處理 Chromecast 裝置
+    for (final device in result['chromecast']!) {
+      final key = getDeviceKey(device);
+      if (uniqueDevices.containsKey(key)) {
+        await _logger.debug(
+          'debug.duplicate_device',
+          tag: 'Discovery',
+          params: {
+            'type': 'Chromecast',
+            'name': device.name,
+            'ip': device.ip,
+            'key': key,
+          },
+        );
+        duplicates.add(device);
+      } else {
+        uniqueDevices[key] = device;
+      }
+    }
+
+    // 處理 DLNA 裝置
+    for (final device in result['dlna']!) {
+      final key = getDeviceKey(device);
+      if (uniqueDevices.containsKey(key)) {
+        await _logger.debug(
+          'debug.duplicate_device',
+          tag: 'Discovery',
+          params: {
+            'type': 'DLNA',
+            'name': device.name,
+            'ip': device.ip,
+            'key': key,
+          },
+        );
+        duplicates.add(device);
+      } else {
+        uniqueDevices[key] = device;
+      }
+    }
+
+    // 更新結果中的裝置清單，移除重複項
+    if (duplicates.isNotEmpty) {
+      await _logger.info(
+        'info.removed_duplicate_devices',
+        tag: 'Discovery',
+        params: {'count': duplicates.length},
+      );
+
+      // 從所有列表中移除重複裝置
+      result['chromecast'] =
+          result['chromecast']!
+              .where((device) => !duplicates.contains(device))
+              .toList();
+      result['dlna'] =
+          result['dlna']!
+              .where((device) => !duplicates.contains(device))
+              .toList();
+    }
+
     // Categorize Chromecast devices by type
     final chromecastDongles = <DiscoveredDevice>[];
     final chromecastAudios = <DiscoveredDevice>[];
