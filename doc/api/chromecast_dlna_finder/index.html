@@ -125,7 +125,7 @@
       <h2>Functions</h2>
       <dl class="callables">
           <dt id="scanAllDlnaDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/scanAllDlnaDevices.html">scanAllDlnaDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAllDlnaDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span></span>})
+  <span class="name"><a href="../chromecast_dlna_finder/scanAllDlnaDevices.html">scanAllDlnaDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAllDlnaDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanAllDlnaDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -133,12 +133,13 @@
 </dt>
 <dd>
   Scan for all DLNA devices (including Renderers and Media Servers)
+<code>onDeviceFound</code> 回調函數，當找到新裝置時調用
   
 
 </dd>
 
           <dt id="scanChromecastDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/scanChromecastDevices.html">scanChromecastDevices</a></span><span class="signature">(<wbr>)
+  <span class="name"><a href="../chromecast_dlna_finder/scanChromecastDevices.html">scanChromecastDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanChromecastDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -146,12 +147,13 @@
 </dt>
 <dd>
   Scan for Chromecast devices in the local network
+<code>onDeviceFound</code> 回調函數，當找到新裝置時調用
   
 
 </dd>
 
           <dt id="scanDlnaMediaServerDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/scanDlnaMediaServerDevices.html">scanDlnaMediaServerDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanDlnaMediaServerDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span></span>})
+  <span class="name"><a href="../chromecast_dlna_finder/scanDlnaMediaServerDevices.html">scanDlnaMediaServerDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanDlnaMediaServerDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanDlnaMediaServerDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -159,12 +161,13 @@
 </dt>
 <dd>
   Scan for DLNA Media Server devices in the local network (using SSDP/UPnP)
+<code>onDeviceFound</code> 回調函數，當找到新裝置時調用
   
 
 </dd>
 
           <dt id="scanDlnaRendererDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/scanDlnaRendererDevices.html">scanDlnaRendererDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanDlnaRendererDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span></span>})
+  <span class="name"><a href="../chromecast_dlna_finder/scanDlnaRendererDevices.html">scanDlnaRendererDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanDlnaRendererDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanDlnaRendererDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -172,6 +175,7 @@
 </dt>
 <dd>
   Scan for DLNA Renderer devices in the local network (using SSDP/UPnP)
+<code>onDeviceFound</code> 回調函數，當找到新裝置時調用
   
 
 </dd>
@@ -220,7 +224,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.5
+      1.1.0
   </span>
   
 </footer>

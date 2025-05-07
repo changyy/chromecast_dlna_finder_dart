@@ -2,12 +2,20 @@ import 'dart:async';
 import 'device.dart';
 import 'mdns_scanner.dart';
 import 'ssdp_scanner.dart';
+import 'discovery_events.dart';
 import '../util/logger.dart';
 
 /// Device discovery service
 class DiscoveryService {
   // Logging service
   final AppLogger _logger = AppLogger();
+
+  // 事件廣播控制器
+  final StreamController<DeviceDiscoveryEvent> _eventController =
+      StreamController.broadcast();
+
+  /// 取得裝置發現事件的串流
+  Stream<DeviceDiscoveryEvent> get discoveryEvents => _eventController.stream;
 
   /// Discover all types of devices
   /// Including Chromecast and DLNA (Renderer and Media Server)
@@ -22,8 +30,51 @@ class DiscoveryService {
     final errors = <String>[];
 
     try {
+      // 通知開始整體搜尋
+      _eventController.add(SearchStartedEvent('all', 'DiscoveryService'));
+
+      // 建立自訂的包裝函數來攔截和發送裝置通知
+      scanChromecastDevicesWithEvents() async {
+        _eventController.add(SearchStartedEvent('chromecast', 'mDNS'));
+        try {
+          final devices = await scanChromecastDevices(
+            onDeviceFound: (device) {
+              _eventController.add(DeviceFoundEvent(device, 'mDNS'));
+            },
+          );
+          _eventController.add(
+            SearchCompleteEvent('chromecast', devices.length, 'mDNS'),
+          );
+          return devices;
+        } catch (e) {
+          _eventController.add(
+            SearchErrorEvent('chromecast', e.toString(), 'mDNS'),
+          );
+          rethrow;
+        }
+      }
+
+      scanAllDlnaDevicesWithEvents() async {
+        _eventController.add(SearchStartedEvent('dlna', 'SSDP'));
+        try {
+          final devices = await scanAllDlnaDevices(
+            timeout: timeout,
+            onDeviceFound: (device) {
+              _eventController.add(DeviceFoundEvent(device, 'SSDP'));
+            },
+          );
+          _eventController.add(
+            SearchCompleteEvent('dlna', devices.length, 'SSDP'),
+          );
+          return devices;
+        } catch (e) {
+          _eventController.add(SearchErrorEvent('dlna', e.toString(), 'SSDP'));
+          rethrow;
+        }
+      }
+
       // Asynchronously scan Chromecast devices
-      final chromecastTask = scanChromecastDevices()
+      final chromecastTask = scanChromecastDevicesWithEvents()
           .then((devices) {
             result['chromecast'] = devices;
           })
@@ -42,7 +93,7 @@ class DiscoveryService {
           });
 
       // Asynchronously scan DLNA devices
-      final dlnaTask = scanAllDlnaDevices(timeout: timeout)
+      final dlnaTask = scanAllDlnaDevicesWithEvents()
           .then((devices) {
             result['dlna'] = devices;
           })
@@ -236,5 +287,10 @@ class DiscoveryService {
     json['status'] = (result['errors']?.isEmpty ?? true);
 
     return json;
+  }
+
+  /// 釋放資源
+  Future<void> dispose() async {
+    await _eventController.close();
   }
 }

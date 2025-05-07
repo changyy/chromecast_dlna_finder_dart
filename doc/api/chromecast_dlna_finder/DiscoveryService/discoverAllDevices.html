@@ -85,8 +85,51 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
   final errors = &lt;String&gt;[];
 
   try {
+    &#47;&#47; 通知開始整體搜尋
+    _eventController.add(SearchStartedEvent(&#39;all&#39;, &#39;DiscoveryService&#39;));
+
+    &#47;&#47; 建立自訂的包裝函數來攔截和發送裝置通知
+    scanChromecastDevicesWithEvents() async {
+      _eventController.add(SearchStartedEvent(&#39;chromecast&#39;, &#39;mDNS&#39;));
+      try {
+        final devices = await scanChromecastDevices(
+          onDeviceFound: (device) {
+            _eventController.add(DeviceFoundEvent(device, &#39;mDNS&#39;));
+          },
+        );
+        _eventController.add(
+          SearchCompleteEvent(&#39;chromecast&#39;, devices.length, &#39;mDNS&#39;),
+        );
+        return devices;
+      } catch (e) {
+        _eventController.add(
+          SearchErrorEvent(&#39;chromecast&#39;, e.toString(), &#39;mDNS&#39;),
+        );
+        rethrow;
+      }
+    }
+
+    scanAllDlnaDevicesWithEvents() async {
+      _eventController.add(SearchStartedEvent(&#39;dlna&#39;, &#39;SSDP&#39;));
+      try {
+        final devices = await scanAllDlnaDevices(
+          timeout: timeout,
+          onDeviceFound: (device) {
+            _eventController.add(DeviceFoundEvent(device, &#39;SSDP&#39;));
+          },
+        );
+        _eventController.add(
+          SearchCompleteEvent(&#39;dlna&#39;, devices.length, &#39;SSDP&#39;),
+        );
+        return devices;
+      } catch (e) {
+        _eventController.add(SearchErrorEvent(&#39;dlna&#39;, e.toString(), &#39;SSDP&#39;));
+        rethrow;
+      }
+    }
+
     &#47;&#47; Asynchronously scan Chromecast devices
-    final chromecastTask = scanChromecastDevices()
+    final chromecastTask = scanChromecastDevicesWithEvents()
         .then((devices) {
           result[&#39;chromecast&#39;] = devices;
         })
@@ -105,7 +148,7 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
         });
 
     &#47;&#47; Asynchronously scan DLNA devices
-    final dlnaTask = scanAllDlnaDevices(timeout: timeout)
+    final dlnaTask = scanAllDlnaDevicesWithEvents()
         .then((devices) {
           result[&#39;dlna&#39;] = devices;
         })
@@ -293,7 +336,7 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.5
+      1.1.0
   </span>
   
 </footer>

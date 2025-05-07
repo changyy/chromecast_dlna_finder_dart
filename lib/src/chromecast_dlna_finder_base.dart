@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'discovery/device.dart';
 import 'discovery/discovery_service.dart';
+import 'discovery/discovery_events.dart';
 import 'util/logger.dart';
 import 'util/platform_info.dart';
 
@@ -10,8 +11,28 @@ class ChromecastDlnaFinder {
   final DiscoveryService _discoveryService = DiscoveryService();
   final AppLogger _logger;
 
+  // Forward events from discovery service
+  StreamSubscription? _discoveryEventsSubscription;
+  StreamController<DeviceDiscoveryEvent>? _eventController;
+
   /// Allow external injection of logger, default to AppLogger singleton
-  ChromecastDlnaFinder({AppLogger? logger}) : _logger = logger ?? AppLogger();
+  ChromecastDlnaFinder({AppLogger? logger}) : _logger = logger ?? AppLogger() {
+    // Initialize event channel
+    _eventController = StreamController.broadcast();
+
+    // Subscribe to discovery service events
+    _discoveryEventsSubscription = _discoveryService.discoveryEvents.listen((
+      event,
+    ) {
+      if (_eventController?.isClosed == false) {
+        _eventController?.add(event);
+      }
+    });
+  }
+
+  /// Get device discovery event stream
+  /// Can be listened to in Flutter UI for real-time device discovery events
+  Stream<DeviceDiscoveryEvent>? get deviceEvents => _eventController?.stream;
 
   /// Configure logging system
   /// [outputs] log output channels
@@ -83,6 +104,9 @@ class ChromecastDlnaFinder {
 
   /// Release resources
   Future<void> dispose() async {
+    await _discoveryEventsSubscription?.cancel();
+    await _eventController?.close();
+    await _discoveryService.dispose();
     await _logger.dispose();
   }
 }

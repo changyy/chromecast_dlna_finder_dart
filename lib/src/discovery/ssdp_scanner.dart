@@ -6,8 +6,10 @@ import '../util/dlna_device_utils.dart';
 import '../util/logger.dart';
 
 /// Scan for DLNA Renderer devices in the local network (using SSDP/UPnP)
+/// [onDeviceFound] 回調函數，當找到新裝置時調用
 Future<List<DiscoveredDevice>> scanDlnaRendererDevices({
   Duration timeout = const Duration(seconds: 3),
+  Function(DiscoveredDevice)? onDeviceFound,
 }) async {
   final logger = AppLogger();
   await logger.info('info.start_dlna_renderer_scan', tag: 'SSDP');
@@ -88,6 +90,9 @@ Future<List<DiscoveredDevice>> scanDlnaRendererDevices({
               },
             );
             responses[ip] = device;
+            if (onDeviceFound != null) {
+              onDeviceFound(device);
+            }
           }
         }
       }
@@ -109,8 +114,10 @@ Future<List<DiscoveredDevice>> scanDlnaRendererDevices({
 }
 
 /// Scan for DLNA Media Server devices in the local network (using SSDP/UPnP)
+/// [onDeviceFound] 回調函數，當找到新裝置時調用
 Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({
   Duration timeout = const Duration(seconds: 3),
+  Function(DiscoveredDevice)? onDeviceFound,
 }) async {
   final logger = AppLogger();
   await logger.info('info.start_dlna_server_scan', tag: 'SSDP');
@@ -174,6 +181,9 @@ Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({
               },
             );
             responses[ip] = device;
+            if (onDeviceFound != null) {
+              onDeviceFound(device);
+            }
           }
         }
       }
@@ -195,13 +205,22 @@ Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({
 }
 
 /// Scan for all DLNA devices (including Renderers and Media Servers)
+/// [onDeviceFound] 回調函數，當找到新裝置時調用
 Future<List<DiscoveredDevice>> scanAllDlnaDevices({
   Duration timeout = const Duration(seconds: 3),
+  Function(DiscoveredDevice)? onDeviceFound,
 }) async {
   final logger = AppLogger();
   await logger.info('info.start_all_dlna_scan', tag: 'SSDP');
-  final renderers = await scanDlnaRendererDevices(timeout: timeout);
-  final mediaServers = await scanDlnaMediaServerDevices(timeout: timeout);
+
+  // 使用 Future.wait 同時掃描兩種裝置
+  final results = await Future.wait([
+    scanDlnaRendererDevices(timeout: timeout, onDeviceFound: onDeviceFound),
+    scanDlnaMediaServerDevices(timeout: timeout, onDeviceFound: onDeviceFound),
+  ]);
+
+  final renderers = results[0];
+  final mediaServers = results[1];
 
   final devices = [...renderers, ...mediaServers];
   await logger.info(

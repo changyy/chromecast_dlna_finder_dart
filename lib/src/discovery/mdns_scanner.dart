@@ -12,7 +12,10 @@ class MdnsPortInUseException implements Exception {
 }
 
 /// Scan for Chromecast devices in the local network
-Future<List<DiscoveredDevice>> scanChromecastDevices() async {
+/// [onDeviceFound] 回調函數，當找到新裝置時調用
+Future<List<DiscoveredDevice>> scanChromecastDevices({
+  Function(DiscoveredDevice)? onDeviceFound,
+}) async {
   final logger = AppLogger();
   await logger.info('info.start_chromecast_scan', tag: 'mDNS');
   final List<DiscoveredDevice> devices = [];
@@ -135,6 +138,11 @@ Future<List<DiscoveredDevice>> scanChromecastDevices() async {
                 'model': device.model,
               },
             );
+
+            // 調用回調函數
+            if (onDeviceFound != null) {
+              onDeviceFound(device);
+            }
           }
         }
       }

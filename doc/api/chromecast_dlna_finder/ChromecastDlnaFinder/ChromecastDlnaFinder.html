@@ -69,7 +69,19 @@
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">ChromecastDlnaFinder({AppLogger? logger}) : _logger = logger ?? AppLogger();</code></pre>
+  <pre class="language-dart"><code class="language-dart">ChromecastDlnaFinder({AppLogger? logger}) : _logger = logger ?? AppLogger() {
+  &#47;&#47; Initialize event channel
+  _eventController = StreamController.broadcast();
+
+  &#47;&#47; Subscribe to discovery service events
+  _discoveryEventsSubscription = _discoveryService.discoveryEvents.listen((
+    event,
+  ) {
+    if (_eventController?.isClosed == false) {
+      _eventController?.add(event);
+    }
+  });
+}</code></pre>
 </section>
 
 
@@ -97,7 +109,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.5
+      1.1.0
   </span>
   
 </footer>

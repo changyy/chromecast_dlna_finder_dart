@@ -58,21 +58,26 @@
     <section class="multi-line-signature">
         
 <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
-<span class="name ">scanChromecastDevices</span>(<wbr>)
+<span class="name ">scanChromecastDevices</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="scanChromecastDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span></li>
+</ol>)?, </span></li>
+</ol>})
 
         
 
     </section>
     
 <section class="desc markdown">
-  <p>Scan for Chromecast devices in the local network</p>
+  <p>Scan for Chromecast devices in the local network
+<code>onDeviceFound</code> 回調函數，當找到新裝置時調用</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanChromecastDevices() async {
+  <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanChromecastDevices({
+  Function(DiscoveredDevice)? onDeviceFound,
+}) async {
   final logger = AppLogger();
   await logger.info(&#39;info.start_chromecast_scan&#39;, tag: &#39;mDNS&#39;);
   final List&lt;DiscoveredDevice&gt; devices = [];
@@ -195,6 +200,11 @@
                 &#39;model&#39;: device.model,
               },
             );
+
+            &#47;&#47; 調用回調函數
+            if (onDeviceFound != null) {
+              onDeviceFound(device);
+            }
           }
         }
       }
@@ -241,7 +251,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.0.5
+      1.1.0
   </span>
   
 </footer>

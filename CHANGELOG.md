@@ -1,3 +1,13 @@
+## 1.1.0
+
+- Added a comprehensive event notification system for real-time device discovery updates
+- Implemented event-based architecture with DeviceFoundEvent, SearchStartedEvent, SearchCompleteEvent, and SearchErrorEvent
+- Improved search efficiency by making DLNA Renderer and MediaServer scans run in parallel
+- Added callback mechanism to scanChromecastDevices and scanDlnaDevices functions for immediate device discovery notifications
+- Created new examples demonstrating event-driven device discovery in both CLI and Flutter applications
+- Enhanced user experience with real-time device discovery feedback
+- Exposed deviceEvents stream from ChromecastDlnaFinder for application integration
+
 ## 1.0.5
 
 - Implemented device duplication detection mechanism to ensure each device appears only once in results
