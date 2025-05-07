@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the discoverAllDevices method from the DiscoveryService class, for the Dart programming language.">
+  <title>discoverAllDevices method - DiscoveryService class - chromecast_dlna_finder library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">chromecast_dlna_finder</a></li>
+    <li><a href="../../chromecast_dlna_finder">chromecast_dlna_finder.dart</a></li>
+    <li><a href="../../chromecast_dlna_finder/DiscoveryService-class.html">DiscoveryService</a></li>
+    <li class="self-crumb">discoverAllDevices method</li>
+  </ol>
+  <div class="self-name">discoverAllDevices</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar="chromecast_dlna_finder&#47;DiscoveryService-class-sidebar.html"
+    data-below-sidebar="">
+    <div>
+<h1><span class="kind-method">discoverAllDevices</span> method 
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
+<span class="name ">discoverAllDevices</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="discoverAllDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 5)</span>, </span></li>
+</ol>})
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Discover all types of devices
+Including Chromecast and DLNA (Renderer and Media Server)</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;Map&lt;String, List&lt;DiscoveredDevice&gt;&gt;&gt; discoverAllDevices({Duration timeout = const Duration(seconds: 5)}) async {
+  final result = &lt;String, List&lt;DiscoveredDevice&gt;&gt;{
+    &#39;chromecast&#39;: [],
+    &#39;dlna&#39;: [],
+  };
+
+  final errors = &lt;String&gt;[];
+
+  try {
+    &#47;&#47; Asynchronously scan Chromecast devices
+    final chromecastTask = scanChromecastDevices().then((devices) {
+      result[&#39;chromecast&#39;] = devices;
+    }).catchError((e) async {
+      await _logger.error(&#39;errors.chromecast_scan_error&#39;, tag: &#39;Discovery&#39;, error: e, params: {&#39;error&#39;: e.toString()});
+      if (e is MdnsPortInUseException) {
+        errors.add(&#39;errors.mdns_port_in_use&#39;);
+      } else {
+        errors.add(&#39;errors.chromecast_scan_error&#39;);
+      }
+    });
+
+    &#47;&#47; Asynchronously scan DLNA devices
+    final dlnaTask = scanAllDlnaDevices(timeout: timeout).then((devices) {
+      result[&#39;dlna&#39;] = devices;
+    }).catchError((e) async {
+      await _logger.error(&#39;errors.dlna_scan_error&#39;, tag: &#39;Discovery&#39;, error: e, params: {&#39;error&#39;: e.toString()});
+      errors.add(&#39;errors.dlna_scan_error&#39;);
+    });
+
+    &#47;&#47; Wait for all scans to complete
+    await Future.wait([chromecastTask, dlnaTask]);
+  } catch (e) {
+    await _logger.error(&#39;errors.unexpected_scan_error&#39;, tag: &#39;Discovery&#39;, error: e, params: {&#39;error&#39;: e.toString()});
+    errors.add(&#39;errors.unexpected_scan_error&#39;);
+  }
+
+  &#47;&#47; Categorize Chromecast devices by type
+  final chromecastDongles = &lt;DiscoveredDevice&gt;[];
+  final chromecastAudios = &lt;DiscoveredDevice&gt;[];
+
+  for (final device in result[&#39;chromecast&#39;]!) {
+    if (device.type == DeviceType.chromecastDongle) {
+      chromecastDongles.add(device);
+    } else if (device.type == DeviceType.chromecastAudio) {
+      chromecastAudios.add(device);
+    }
+  }
+
+  result[&#39;chromecast_dongle&#39;] = chromecastDongles;
+  result[&#39;chromecast_audio&#39;] = chromecastAudios;
+
+  &#47;&#47; Categorize DLNA devices by type
+  final dlnaRenderers = &lt;DiscoveredDevice&gt;[];
+  final dlnaMediaServers = &lt;DiscoveredDevice&gt;[];
+
+  for (final device in result[&#39;dlna&#39;]!) {
+    if (device.type == DeviceType.dlnaRenderer) {
+      dlnaRenderers.add(device);
+    } else if (device.type == DeviceType.dlnaMediaServer) {
+      dlnaMediaServers.add(device);
+    }
+  }
+
+  result[&#39;dlna_renderer&#39;] = dlnaRenderers;
+  result[&#39;dlna_media_server&#39;] = dlnaMediaServers;
+
+  &#47;&#47; Add error information
+  result[&#39;errors&#39;] = errors.map((e) =&gt; DiscoveredDevice(
+    name: e,
+    ip: &#39;&#39;,
+    type: DeviceType.unknown,
+  )).toList();
+
+  await _logger.debug(&#39;Device discovery complete: Chromecast=${result[&#39;chromecast&#39;]!.length}, DLNA=${result[&#39;dlna&#39;]!.length}, Errors=${errors.length}&#39;, tag: &#39;Discovery&#39;);
+
+  return result;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../../index.html">chromecast_dlna_finder</a></li>
+    <li><a href="../../chromecast_dlna_finder">chromecast_dlna_finder</a></li>
+    <li><a href="../../chromecast_dlna_finder/DiscoveryService-class.html">DiscoveryService</a></li>
+    <li class="self-crumb">discoverAllDevices method</li>
+</ol>
+
+    <h5>DiscoveryService class</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+</div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    chromecast_dlna_finder
+      1.0.0
+  </span>
+  
+</footer>
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

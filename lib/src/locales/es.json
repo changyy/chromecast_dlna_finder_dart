@@ -1,0 +1,36 @@
+{
+  "errors": {
+    "mdns_port_in_use": "El puerto mDNS (5353) está en uso",
+    "chromecast_scan_error": "Error de escaneo de Chromecast: {error}",
+    "dlna_scan_error": "Error de escaneo de DLNA: {error}",
+    "unexpected_scan_error": "Error inesperado durante el escaneo de dispositivos: {error}",
+    "port_in_use": "El puerto {port} está en uso, no se puede escanear dispositivos Chromecast",
+    "mdns_init_error": "Error desconocido al inicializar el cliente mDNS",
+    "chromecast_scan_failed": "Error al escanear dispositivos Chromecast",
+    "parse_control_urls_failed": "Error al analizar controlURLs",
+    "parse_txt_record_failed": "Error al analizar el registro TXT: {error}"
+  },
+  "info": {
+    "start_device_scan": "Iniciando escaneo de dispositivos, tiempo de espera: {timeout}s",
+    "device_scan_completed": "Escaneo de dispositivos completado",
+    "start_chromecast_scan": "Iniciando escaneo de dispositivos Chromecast",
+    "standard_mdns_port": "Uso exitoso del puerto mDNS estándar",
+    "found_service": "Servicio encontrado: target={target}, port={port}, priority={priority}, weight={weight}",
+    "found_device": "{deviceType} encontrado: {name} ({ip}), modelo: {model}",
+    "chromecast_scan_complete": "Escaneo de Chromecast completado, se encontraron {count} dispositivos",
+    "start_dlna_renderer_scan": "Iniciando escaneo de dispositivos DLNA Renderer",
+    "found_dlna_renderer": "DLNA Renderer encontrado: {name} ({ip}), modelo: {model}, ubicación: {location}",
+    "dlna_renderer_scan_complete": "Escaneo de DLNA Renderer completado, se encontraron {count} dispositivos",
+    "start_dlna_server_scan": "Iniciando escaneo de dispositivos DLNA Media Server",
+    "found_dlna_server": "DLNA Media Server encontrado: {name} ({ip}), modelo: {model}, ubicación: {location}",
+    "dlna_server_scan_complete": "Escaneo de DLNA Media Server completado, se encontraron {count} dispositivos",
+    "start_all_dlna_scan": "Iniciando escaneo de todos los dispositivos DLNA",
+    "all_dlna_scan_complete": "Escaneo de todos los dispositivos DLNA completado, se encontraron {count} dispositivos"
+  },
+  "debug": {
+    "txt_record_type": "Tipo de registro TXT: {type}",
+    "nonstandard_txt_format": "Formato de registro TXT no estándar, intentando analizar: {txtRaw}",
+    "txt_map": "txtMap: {map}",
+    "found_service": "Servicio encontrado: target={target}, port={port}, priority={priority}, weight={weight}"
+  }
+}

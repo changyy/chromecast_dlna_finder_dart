@@ -1,0 +1,36 @@
+{
+  "errors": {
+    "mdns_port_in_use": "mDNSポート（5353）が使用中です",
+    "chromecast_scan_error": "Chromecastスキャンエラー: {error}",
+    "dlna_scan_error": "DLNAスキャンエラー: {error}",
+    "unexpected_scan_error": "デバイススキャン中に予期しないエラーが発生しました: {error}",
+    "port_in_use": "ポート{port}は使用中のため、Chromecastデバイスのスキャンができません",
+    "mdns_init_error": "mDNSクライアントの初期化中に不明なエラーが発生しました",
+    "chromecast_scan_failed": "Chromecastデバイスのスキャン中にエラーが発生しました",
+    "parse_control_urls_failed": "controlURLsの解析に失敗しました",
+    "parse_txt_record_failed": "TXTレコードの解析に失敗しました: {error}"
+  },
+  "info": {
+    "start_device_scan": "デバイススキャンを開始します。タイムアウト: {timeout}秒",
+    "device_scan_completed": "デバイススキャンが完了しました",
+    "start_chromecast_scan": "Chromecastデバイスのスキャンを開始します",
+    "standard_mdns_port": "標準mDNSポートの使用に成功しました",
+    "found_service": "サービスを発見: target={target}, port={port}, priority={priority}, weight={weight}",
+    "found_device": "{deviceType}を発見: {name} ({ip}), モデル: {model}",
+    "chromecast_scan_complete": "Chromecastスキャンが完了しました。{count}台のデバイスを発見",
+    "start_dlna_renderer_scan": "DLNAレンダラーデバイスのスキャンを開始します",
+    "found_dlna_renderer": "DLNAレンダラーを発見: {name} ({ip}), モデル: {model}, ロケーション: {location}",
+    "dlna_renderer_scan_complete": "DLNAレンダラースキャンが完了しました。{count}台のデバイスを発見",
+    "start_dlna_server_scan": "DLNAメディアサーバーデバイスのスキャンを開始します",
+    "found_dlna_server": "DLNAメディアサーバーを発見: {name} ({ip}), モデル: {model}, ロケーション: {location}",
+    "dlna_server_scan_complete": "DLNAメディアサーバースキャンが完了しました。{count}台のデバイスを発見",
+    "start_all_dlna_scan": "すべてのDLNAデバイスのスキャンを開始します",
+    "all_dlna_scan_complete": "すべてのDLNAデバイスのスキャンが完了しました。{count}台のデバイスを発見"
+  },
+  "debug": {
+    "txt_record_type": "TXTレコードタイプ: {type}",
+    "nonstandard_txt_format": "非標準のTXTレコード形式。解析を試みます: {txtRaw}",
+    "txt_map": "txtMap: {map}",
+    "found_service": "サービスを発見: target={target}, port={port}, priority={priority}, weight={weight}"
+  }
+}

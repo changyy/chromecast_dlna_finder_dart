@@ -1,0 +1,36 @@
+{
+  "errors": {
+    "mdns_port_in_use": "mDNS port (5353) is in use",
+    "chromecast_scan_error": "Chromecast scan error: {error}",
+    "dlna_scan_error": "DLNA scan error: {error}",
+    "unexpected_scan_error": "Unexpected error during device scan: {error}",
+    "port_in_use": "Port {port} is in use, cannot scan for Chromecast devices",
+    "mdns_init_error": "Unknown error initializing mDNS client",
+    "chromecast_scan_failed": "Error scanning Chromecast devices",
+    "parse_control_urls_failed": "Failed to parse controlURLs",
+    "parse_txt_record_failed": "Failed to parse TXT record: {error}"
+  },
+  "info": {
+    "start_device_scan": "Starting device scan, timeout: {timeout}s",
+    "device_scan_completed": "Device scan completed",
+    "start_chromecast_scan": "Starting Chromecast device scan",
+    "standard_mdns_port": "Successfully using standard mDNS port",
+    "found_service": "Found service: target={target}, port={port}, priority={priority}, weight={weight}",
+    "found_device": "Found {deviceType}: {name} ({ip}), model: {model}",
+    "chromecast_scan_complete": "Chromecast scan complete, found {count} devices",
+    "start_dlna_renderer_scan": "Starting DLNA Renderer device scan",
+    "found_dlna_renderer": "Found DLNA Renderer: {name} ({ip}), model: {model}, location: {location}",
+    "dlna_renderer_scan_complete": "DLNA Renderer scan complete, found {count} devices",
+    "start_dlna_server_scan": "Starting DLNA Media Server device scan",
+    "found_dlna_server": "Found DLNA Media Server: {name} ({ip}), model: {model}, location: {location}",
+    "dlna_server_scan_complete": "DLNA Media Server scan complete, found {count} devices",
+    "start_all_dlna_scan": "Starting scan for all DLNA devices",
+    "all_dlna_scan_complete": "All DLNA device scan complete, found {count} devices"
+  },
+  "debug": {
+    "txt_record_type": "TXT record type: {type}",
+    "nonstandard_txt_format": "Non-standard TXT record format, attempting to parse: {txtRaw}",
+    "txt_map": "txtMap: {map}",
+    "found_service": "Found service: target={target}, port={port}, priority={priority}, weight={weight}"
+  }
+}

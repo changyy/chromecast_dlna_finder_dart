@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the scanChromecastDevices function from the chromecast_dlna_finder library, for the Dart programming language.">
+  <title>scanChromecastDevices function - chromecast_dlna_finder library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">chromecast_dlna_finder</a></li>
+    <li><a href="../chromecast_dlna_finder">chromecast_dlna_finder.dart</a></li>
+    <li class="self-crumb">scanChromecastDevices function</li>
+  </ol>
+  <div class="self-name">scanChromecastDevices</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="chromecast_dlna_finder&#47;chromecast_dlna_finder-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">scanChromecastDevices</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
+<span class="name ">scanChromecastDevices</span>(<wbr>)
+
+        
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Scan for Chromecast devices in the local network</p>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanChromecastDevices() async {
+  final logger = AppLogger();
+  await logger.info(&#39;info.start_chromecast_scan&#39;, tag: &#39;mDNS&#39;);
+  final List&lt;DiscoveredDevice&gt; devices = [];
+  MDnsClient? client;
+
+  try {
+    &#47;&#47; Try standard mDNS port, explicitly set reuseAddress=true and reusePort=true
+    &#47;&#47; This allows binding even if other processes are already listening
+    client = MDnsClient(rawDatagramSocketFactory: (dynamic host, int port, {bool? reuseAddress, bool? reusePort, int? ttl}) {
+      return RawDatagramSocket.bind(host, port, reuseAddress: true, reusePort: true, ttl: ttl ?? 1);
+    });
+    await client.start();
+    await logger.info(&#39;info.standard_mdns_port&#39;, tag: &#39;mDNS&#39;);
+  } on SocketException catch (e) {
+    if (e.osError?.errorCode == 48 || &#47;&#47; macOS&#47;Linux port in use
+        e.osError?.errorCode == 10048) { &#47;&#47; Windows port in use
+      await logger.error(&#39;errors.port_in_use&#39;, tag: &#39;mDNS&#39;, params: {&#39;port&#39;: e.port});
+      throw MdnsPortInUseException(&#39;mDNS port ${e.port} is in use, cannot scan for Chromecast devices&#39;);
+    }
+    rethrow;
+  } catch (e) {
+    await logger.error(&#39;errors.mdns_init_error&#39;, tag: &#39;mDNS&#39;, error: e);
+    rethrow;
+  }
+
+  &#47;&#47; Continue normal scanning process
+  try {
+    &#47;&#47; dns-sd -B _googlecast._tcp local
+    await for (final PtrResourceRecord ptr in client.lookup&lt;PtrResourceRecord&gt;(ResourceRecordQuery.serverPointer(&#39;_googlecast._tcp.local&#39;))) {
+      final serviceName = ptr.domainName; &#47;&#47; e.g. Chromecast-XXXXXX._googlecast._tcp.local
+      await for (final SrvResourceRecord srv in client.lookup&lt;SrvResourceRecord&gt;(ResourceRecordQuery.service(serviceName))) {
+        await logger.debug(&#39;debug.found_service&#39;, tag: &#39;mDNS&#39;, params: {
+          &#39;target&#39;: srv.target,
+          &#39;port&#39;: srv.port,
+          &#39;priority&#39;: srv.priority,
+          &#39;weight&#39;: srv.weight
+        });
+        await for (final IPAddressResourceRecord ip in client.lookup&lt;IPAddressResourceRecord&gt;(ResourceRecordQuery.addressIPv4(srv.target))) {
+          &#47;&#47; Query TXT record
+          await for (final TxtResourceRecord txt in client.lookup&lt;TxtResourceRecord&gt;(ResourceRecordQuery.text(serviceName))) {
+            final txtMap = &lt;String, String&gt;{};
+            final dynamic txtRaw = txt.text;
+
+            &#47;&#47; Safely parse TXT record
+            await _parseTxtRecord(txtRaw, txtMap, logger);
+
+            &#47;&#47; Use factory method to create device object, automatically determine Chromecast type
+            final device = DiscoveredDevice.fromChromecast(
+              ip: ip.address.address,
+              port: srv.port,
+              serviceName: serviceName,
+              txtMap: txtMap,
+            );
+
+            &#47;&#47; Display different messages based on device type
+            final deviceType = device.isChromecastAudio ? &#39;Chromecast Audio&#39; : &#39;Chromecast&#39;;
+            await logger.info(&#39;info.found_device&#39;, tag: &#39;mDNS&#39;, params: {
+              &#39;deviceType&#39;: deviceType,
+              &#39;name&#39;: device.name,
+              &#39;ip&#39;: device.ip,
+              &#39;model&#39;: device.model
+            });
+
+            devices.add(device);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    await logger.error(&#39;errors.chromecast_scan_failed&#39;, tag: &#39;mDNS&#39;, error: e);
+  } finally {
+    client.stop();
+  }
+
+  await logger.info(&#39;info.chromecast_scan_complete&#39;, tag: &#39;mDNS&#39;, params: {&#39;count&#39;: devices.length});
+  return devices;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">chromecast_dlna_finder</a></li>
+    <li><a href="../chromecast_dlna_finder">chromecast_dlna_finder</a></li>
+    <li class="self-crumb">scanChromecastDevices function</li>
+</ol>
+
+    <h5>chromecast_dlna_finder library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    chromecast_dlna_finder
+      1.0.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

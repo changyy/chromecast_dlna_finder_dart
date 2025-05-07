@@ -1,0 +1,36 @@
+{
+  "errors": {
+    "mdns_port_in_use": "mDNS端口（5353）已被占用",
+    "chromecast_scan_error": "Chromecast扫描错误: {error}",
+    "dlna_scan_error": "DLNA扫描错误: {error}",
+    "unexpected_scan_error": "设备扫描过程中发生意外错误: {error}",
+    "port_in_use": "端口{port}已被占用，无法扫描Chromecast设备",
+    "mdns_init_error": "初始化mDNS客户端时发生未知错误",
+    "chromecast_scan_failed": "扫描Chromecast设备时发生错误",
+    "parse_control_urls_failed": "解析controlURLs失败",
+    "parse_txt_record_failed": "解析TXT记录失败: {error}"
+  },
+  "info": {
+    "start_device_scan": "开始扫描设备，超时: {timeout}秒",
+    "device_scan_completed": "设备扫描完成",
+    "start_chromecast_scan": "开始扫描Chromecast设备",
+    "standard_mdns_port": "成功使用标准mDNS端口",
+    "found_service": "发现服务: target={target}, port={port}, priority={priority}, weight={weight}",
+    "found_device": "发现{deviceType}: {name} ({ip}), 型号: {model}",
+    "chromecast_scan_complete": "Chromecast扫描完成，发现{count}台设备",
+    "start_dlna_renderer_scan": "开始扫描DLNA播放器设备",
+    "found_dlna_renderer": "发现DLNA播放器: {name} ({ip}), 型号: {model}, 位置: {location}",
+    "dlna_renderer_scan_complete": "DLNA播放器扫描完成，发现{count}台设备",
+    "start_dlna_server_scan": "开始扫描DLNA媒体服务器设备",
+    "found_dlna_server": "发现DLNA媒体服务器: {name} ({ip}), 型号: {model}, 位置: {location}",
+    "dlna_server_scan_complete": "DLNA媒体服务器扫描完成，发现{count}台设备",
+    "start_all_dlna_scan": "开始扫描所有DLNA设备",
+    "all_dlna_scan_complete": "所有DLNA设备扫描完成，发现{count}台设备"
+  },
+  "debug": {
+    "txt_record_type": "TXT记录类型: {type}",
+    "nonstandard_txt_format": "非标准TXT记录格式，尝试解析: {txtRaw}",
+    "txt_map": "txtMap: {map}",
+    "found_service": "发现服务: target={target}, port={port}, priority={priority}, weight={weight}"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "errors": {
+    "mdns_port_in_use": "mDNS 埠（5353）已被使用",
+    "chromecast_scan_error": "Chromecast 掃描錯誤：{error}",
+    "dlna_scan_error": "DLNA 掃描錯誤：{error}",
+    "unexpected_scan_error": "裝置掃描期間發生未預期錯誤：{error}",
+    "port_in_use": "埠 {port} 已被使用，無法掃描 Chromecast 裝置",
+    "mdns_init_error": "初始化 mDNS 客戶端時發生未知錯誤",
+    "chromecast_scan_failed": "掃描 Chromecast 裝置時發生錯誤",
+    "parse_control_urls_failed": "解析控制 URL 失敗",
+    "parse_txt_record_failed": "解析 TXT 記錄失敗：{error}"
+  },
+  "info": {
+    "start_device_scan": "開始掃描裝置，逾時：{timeout} 秒",
+    "device_scan_completed": "裝置掃描完成",
+    "start_chromecast_scan": "開始掃描 Chromecast 裝置",
+    "standard_mdns_port": "成功使用標準 mDNS 埠",
+    "found_service": "發現服務：目標={target}，埠={port}，優先級={priority}，權重={weight}",
+    "found_device": "發現 {deviceType}：{name}（{ip}），型號：{model}",
+    "chromecast_scan_complete": "Chromecast 掃描完成，發現 {count} 個裝置",
+    "start_dlna_renderer_scan": "開始掃描 DLNA 播放器裝置",
+    "found_dlna_renderer": "發現 DLNA 播放器：{name}（{ip}），型號：{model}，位置：{location}",
+    "dlna_renderer_scan_complete": "DLNA 播放器掃描完成，發現 {count} 個裝置",
+    "start_dlna_server_scan": "開始掃描 DLNA 媒體伺服器裝置",
+    "found_dlna_server": "發現 DLNA 媒體伺服器：{name}（{ip}），型號：{model}，位置：{location}",
+    "dlna_server_scan_complete": "DLNA 媒體伺服器掃描完成，發現 {count} 個裝置",
+    "start_all_dlna_scan": "開始掃描所有 DLNA 裝置",
+    "all_dlna_scan_complete": "所有 DLNA 裝置掃描完成，發現 {count} 個裝置"
+  },
+  "debug": {
+    "txt_record_type": "TXT 記錄類型：{type}",
+    "nonstandard_txt_format": "非標準 TXT 記錄格式，嘗試解析：{txtRaw}",
+    "txt_map": "TXT 映射：{map}",
+    "found_service": "發現服務：目標={target}，埠={port}，優先級={priority}，權重={weight}"
+  }
+}

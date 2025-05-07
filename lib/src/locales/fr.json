@@ -1,0 +1,36 @@
+{
+  "errors": {
+    "mdns_port_in_use": "Le port mDNS (5353) est utilisé",
+    "chromecast_scan_error": "Erreur de scan Chromecast : {error}",
+    "dlna_scan_error": "Erreur de scan DLNA : {error}",
+    "unexpected_scan_error": "Erreur inattendue lors de l'analyse des appareils : {error}",
+    "port_in_use": "Le port {port} est utilisé, impossible de scanner les appareils Chromecast",
+    "mdns_init_error": "Erreur inconnue lors de l'initialisation du client mDNS",
+    "chromecast_scan_failed": "Erreur lors de l'analyse des appareils Chromecast",
+    "parse_control_urls_failed": "Échec de l'analyse des controlURLs",
+    "parse_txt_record_failed": "Échec de l'analyse de l'enregistrement TXT : {error}"
+  },
+  "info": {
+    "start_device_scan": "Démarrage de l'analyse des appareils, délai d'attente : {timeout}s",
+    "device_scan_completed": "Analyse des appareils terminée",
+    "start_chromecast_scan": "Démarrage de l'analyse des appareils Chromecast",
+    "standard_mdns_port": "Utilisation réussie du port mDNS standard",
+    "found_service": "Service trouvé : target={target}, port={port}, priority={priority}, weight={weight}",
+    "found_device": "{deviceType} trouvé : {name} ({ip}), modèle : {model}",
+    "chromecast_scan_complete": "Analyse Chromecast terminée, {count} appareils trouvés",
+    "start_dlna_renderer_scan": "Démarrage de l'analyse des appareils DLNA Renderer",
+    "found_dlna_renderer": "DLNA Renderer trouvé : {name} ({ip}), modèle : {model}, emplacement : {location}",
+    "dlna_renderer_scan_complete": "Analyse DLNA Renderer terminée, {count} appareils trouvés",
+    "start_dlna_server_scan": "Démarrage de l'analyse des appareils DLNA Media Server",
+    "found_dlna_server": "DLNA Media Server trouvé : {name} ({ip}), modèle : {model}, emplacement : {location}",
+    "dlna_server_scan_complete": "Analyse DLNA Media Server terminée, {count} appareils trouvés",
+    "start_all_dlna_scan": "Démarrage de l'analyse de tous les appareils DLNA",
+    "all_dlna_scan_complete": "Analyse de tous les appareils DLNA terminée, {count} appareils trouvés"
+  },
+  "debug": {
+    "txt_record_type": "Type d'enregistrement TXT : {type}",
+    "nonstandard_txt_format": "Format d'enregistrement TXT non standard, tentative d'analyse : {txtRaw}",
+    "txt_map": "txtMap : {map}",
+    "found_service": "Service trouvé : target={target}, port={port}, priority={priority}, weight={weight}"
+  }
+}

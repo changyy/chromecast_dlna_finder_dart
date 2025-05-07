@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="chromecast_dlna_finder API docs, for the Dart programming language.">
+  <title>chromecast_dlna_finder - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="https://github.com/changyy/chromecast_dlna_finder_dart">chromecast_dlna_finder package</a></li>
+  </ol>
+  <div class="self-name">chromecast_dlna_finder</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 id="chromecast-dlna-finder">Chromecast DLNA Finder</h1>
+<p><a href="https://pub.dev/packages/chromecast_dlna_finder"><img src="https://img.shields.io/pub/v/chromecast_dlna_finder.svg" alt="pub package"></a></p>
+<p>A Dart package for discovering Chromecast and DLNA devices on your local network, providing easy-to-use APIs for scanning, categorizing, and interacting with these devices.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li>🔍 Scan for all Chromecast and DLNA devices on your local network</li>
+<li>📊 Automatic device categorization (Chromecast Dongle, Chromecast Audio, DLNA Renderer, DLNA Media Server)</li>
+<li>🌐 Support for both command-line tools and Dart/Flutter/desktop applications</li>
+<li>🔄 Continuous scanning mode support</li>
+<li>🌍 Multilingual support (English, Traditional Chinese, Simplified Chinese, Japanese, German, French, Spanish, Italian, Russian, Portuguese, Hong Kong Chinese, and more)</li>
+<li>📱 Cross-platform (macOS, Linux, Windows, Android, iOS)</li>
+<li>🖥️ Logger system with flexible output (stderr, stdout, broadcast for app UI)</li>
+</ul>
+<h2 id="installation">Installation</h2>
+<p>Use Dart's <code>pub</code> package manager to install:</p>
+<pre class="language-bash"><code class="language-bash">dart pub add chromecast_dlna_finder
+</code></pre>
+<p>Or manually add it to your <code>pubspec.yaml</code> file:</p>
+<pre class="language-yaml"><code class="language-yaml">dependencies:
+  chromecast_dlna_finder: ^1.0.0
+</code></pre>
+<h2 id="architecture-overview">Architecture Overview</h2>
+<p>The package follows a modular architecture:</p>
+<pre class="language-dart"><code>lib/
+├── chromecast_dlna_finder.dart    # Main export file
+└── src/
+    ├── chromecast_dlna_finder_base.dart  # Core functionality
+    ├── discovery/                  # Device discovery modules
+    │   ├── device.dart            # Device model &amp; type definitions
+    │   ├── discovery_service.dart  # Main discovery orchestrator
+    │   ├── mdns_scanner.dart      # Chromecast discovery via mDNS
+    │   ├── ssdp_scanner.dart      # DLNA discovery via SSDP
+    │   └── cached_device.dart     # Device caching mechanism
+    ├── locales/                   # Internationalization
+    │   ├── en.json                # English strings
+    │   ├── zh_TW.json             # Traditional Chinese
+    │   ├── zh_CN.json             # Simplified Chinese
+    │   ├── ja.json                # Japanese
+    │   ├── de.json                # German
+    │   ├── fr.json                # French
+    │   ├── es.json                # Spanish
+    │   ├── it.json                # Italian
+    │   ├── ru.json                # Russian
+    │   ├── pt.json                # Portuguese
+    │   ├── zh_HK.json             # Hong Kong Chinese
+    │   └── ...                    # More languages
+    └── util/                      # Utility classes
+        ├── dlna_device_utils.dart  # DLNA-specific helpers
+        ├── localization.dart      # Localization infrastructure
+        ├── localization_manager.dart # Localization logic
+        ├── logger.dart            # Logging system
+        └── platform_info.dart     # Platform detection
+</code></pre>
+<p><strong>Key Components:</strong></p>
+<ul>
+<li><strong>ChromecastDlnaFinder</strong>: Main entry point for all operations</li>
+<li><strong>Discovery Service</strong>: Coordinates the scanning process between different protocols</li>
+<li><strong>Device Model</strong>: Unified representation of both Chromecast and DLNA devices</li>
+<li><strong>Scanner Modules</strong>: Specialized modules for each protocol (mDNS, SSDP)</li>
+<li><strong>Localization System</strong>: Custom i18n implementation for multilingual support with fallback (e.g. zh_TW_Hant → zh_TW → zh)</li>
+<li><strong>Logger</strong>: Flexible logger supporting stderr, stdout, and broadcast (for app/Flutter UI)</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<h3 id="as-a-command-line-tool">As a Command-Line Tool</h3>
+<p>Install the CLI tool globally:</p>
+<pre class="language-bash"><code class="language-bash">dart pub global activate chromecast_dlna_finder
+</code></pre>
+<p>Run a scan:</p>
+<pre class="language-bash"><code class="language-bash">chromecast_dlna_finder --timeout 5
+</code></pre>
+<p>Command-line options:</p>
+<pre class="language-dart"><code>Options:
+  -h, --help            Show help information
+  -t, --timeout=&lt;seconds&gt;  Scan timeout in seconds (default: 5)
+  -m, --minify          Output minified JSON
+  -q, --quiet           Suppress progress messages
+  -d, --debug           Enable verbose debug information
+  -l, --lang=&lt;language&gt;  Specify language (e.g., en, zh-TW, ja, de, fr, es, it, ru, pt, zh-HK, zh-CN)
+</code></pre>
+<h3 id="in-dartflutterpc-app-code">In Dart/Flutter/PC App Code</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:chromecast_dlna_finder/chromecast_dlna_finder.dart';
+
+Future&lt;void&gt; main() async {
+  // Initialize logger for app/Flutter UI log listening
+  final logger = AppLogger();
+  logger.setOutputs({LoggerOutput.broadcast});
+  await logger.init();
+
+  // Listen to log stream (for UI or custom handling)
+  final subscription = logger.broadcastStream?.listen((record) {
+    print('[APP LOG][${record.level}] ${record.message}');
+  });
+
+  // Initialize the scanner with injected logger
+  final finder = ChromecastDlnaFinder(logger: logger);
+
+  // Scan for devices
+  final devices = await finder.findDevices(timeout: Duration(seconds: 5));
+
+  // Output all discovered devices
+  print('Discovered Chromecast devices:');
+  for (final device in devices['chromecast'] ?? []) {
+    print('- ${device.name} (${device.ip})');
+  }
+
+  print('Discovered DLNA devices:');
+  for (final device in devices['dlna'] ?? []) {
+    print('- ${device.name} (${device.ip})');
+  }
+
+  // Release resources
+  await finder.dispose();
+  await logger.dispose();
+  await subscription?.cancel();
+}
+</code></pre>
+<h2 id="output-format">Output Format</h2>
+<p>Scan results are output in JSON format with the following structure:</p>
+<pre class="language-json"><code class="language-json">{
+  "status": true,
+  "error": [],
+  "chromecast": [],
+  "chromecast_dongle": [],
+  "chromecast_audio": [],
+  "dlna": [],
+  "dlna_renderer": [],
+  "dlna_media_server": []
+}
+</code></pre>
+<h2 id="device-information">Device Information</h2>
+<p>Each device object contains the following information:</p>
+<pre class="language-json"><code class="language-json">{
+  "name": "Living Room TV",
+  "ip": "192.168.1.100",
+  "type": "chromecastDongle",
+  "model": "Chromecast",
+  "location": "...",
+  "avTransportControlUrl": "...",
+  "renderingControlUrl": "..."
+}
+</code></pre>
+<h2 id="advanced-usage">Advanced Usage</h2>
+<h3 id="getting-device-control-urls-dlna-renderers-only">Getting Device Control URLs (DLNA Renderers Only)</h3>
+<pre class="language-dart"><code class="language-dart">import 'package:chromecast_dlna_finder/chromecast_dlna_finder.dart';
+
+Future&lt;void&gt; main() async {
+  final finder = ChromecastDlnaFinder();
+  final devices = await finder.findDevices(timeout: Duration(seconds: 5));
+  for (final device in devices['dlna_renderer'] ?? []) {
+    print('Renderer: ${device.name}');
+    print('  - AVTransport control URL: ${device.avTransportControlUrl}');
+    print('  - Rendering control URL: ${device.renderingControlUrl}');
+  }
+  await finder.dispose();
+}
+</code></pre>
+<h3 id="logger-output-control">Logger Output Control</h3>
+<ul>
+<li>To output logs to stderr (CLI):
+<pre class="language-dart"><code class="language-dart">AppLogger().setOutputs({LoggerOutput.stderr});
+</code></pre>
+</li>
+<li>To output logs to broadcast stream (for app/Flutter UI):
+<pre class="language-dart"><code class="language-dart">AppLogger().setOutputs({LoggerOutput.broadcast});
+</code></pre>
+</li>
+<li>To disable all logs:
+<pre class="language-dart"><code class="language-dart">AppLogger().setOutputs({});
+</code></pre>
+</li>
+</ul>
+<h2 id="multilingual-support--fallback">Multilingual Support &amp; Fallback</h2>
+<ul>
+<li>Supported languages: English, Traditional Chinese (zh_TW), Simplified Chinese (zh_CN, zh), Japanese (ja), German (de), French (fr), Spanish (es), Italian (it), Russian (ru), Portuguese (pt), Hong Kong Chinese (zh_HK), and more.</li>
+<li>Fallback order: language-region-variant → language-region → language (e.g. zh_TW_Hant → zh_TW → zh)</li>
+<li>You can specify language via CLI <code>-l</code> or in code via <code>LocalizationManager().init(locale: 'ja')</code>.</li>
+</ul>
+<h2 id="running-tests">Running Tests</h2>
+<p>This package includes comprehensive tests. To run them with detailed output:</p>
+<pre class="language-bash"><code class="language-bash"># Run all tests with expanded output
+dart test --reporter expanded
+
+# Run specific test file
+dart test test/scanners_mock_test.dart --reporter expanded
+</code></pre>
+<h2 id="network-requirements">Network Requirements</h2>
+<ul>
+<li>Chromecast discovery uses mDNS (multicast DNS), requiring UDP port 5353</li>
+<li>DLNA discovery uses SSDP protocol, requiring UDP port 1900 and related HTTP ports</li>
+</ul>
+<h2 id="license">License</h2>
+<p>MIT</p>
+<h2 id="contributing">Contributing</h2>
+<p>Contributions welcome! Please submit issues and suggestions to the <a href="https://github.com/changyy/chromecast_dlna_finder_dart">GitHub repository</a>.</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="chromecast_dlna_finder">
+  <span class="name"><a href="chromecast_dlna_finder">chromecast_dlna_finder</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="https://github.com/changyy/chromecast_dlna_finder_dart">chromecast_dlna_finder package</a></li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">chromecast_dlna_finder</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="chromecast_dlna_finder">chromecast_dlna_finder</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    chromecast_dlna_finder
+      1.0.0
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

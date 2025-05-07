@@ -1,0 +1,36 @@
+{
+  "errors": {
+    "mdns_port_in_use": "Der mDNS-Port (5353) ist belegt",
+    "chromecast_scan_error": "Chromecast-Scan-Fehler: {error}",
+    "dlna_scan_error": "DLNA-Scan-Fehler: {error}",
+    "unexpected_scan_error": "Unerwarteter Fehler beim Gerätescan: {error}",
+    "port_in_use": "Port {port} ist belegt, Chromecast-Geräte können nicht gescannt werden",
+    "mdns_init_error": "Unbekannter Fehler bei der Initialisierung des mDNS-Clients",
+    "chromecast_scan_failed": "Fehler beim Scannen von Chromecast-Geräten",
+    "parse_control_urls_failed": "Fehler beim Parsen von controlURLs",
+    "parse_txt_record_failed": "Fehler beim Parsen des TXT-Eintrags: {error}"
+  },
+  "info": {
+    "start_device_scan": "Gerätescan wird gestartet, Timeout: {timeout}s",
+    "device_scan_completed": "Gerätescan abgeschlossen",
+    "start_chromecast_scan": "Chromecast-Gerätescan wird gestartet",
+    "standard_mdns_port": "Standard-mDNS-Port erfolgreich verwendet",
+    "found_service": "Dienst gefunden: target={target}, port={port}, priority={priority}, weight={weight}",
+    "found_device": "{deviceType} gefunden: {name} ({ip}), Modell: {model}",
+    "chromecast_scan_complete": "Chromecast-Scan abgeschlossen, {count} Geräte gefunden",
+    "start_dlna_renderer_scan": "DLNA Renderer-Gerätescan wird gestartet",
+    "found_dlna_renderer": "DLNA Renderer gefunden: {name} ({ip}), Modell: {model}, Standort: {location}",
+    "dlna_renderer_scan_complete": "DLNA Renderer-Scan abgeschlossen, {count} Geräte gefunden",
+    "start_dlna_server_scan": "DLNA Media Server-Gerätescan wird gestartet",
+    "found_dlna_server": "DLNA Media Server gefunden: {name} ({ip}), Modell: {model}, Standort: {location}",
+    "dlna_server_scan_complete": "DLNA Media Server-Scan abgeschlossen, {count} Geräte gefunden",
+    "start_all_dlna_scan": "Scan aller DLNA-Geräte wird gestartet",
+    "all_dlna_scan_complete": "Scan aller DLNA-Geräte abgeschlossen, {count} Geräte gefunden"
+  },
+  "debug": {
+    "txt_record_type": "TXT-Eintragstyp: {type}",
+    "nonstandard_txt_format": "Nicht standardmäßiges TXT-Eintragsformat, versuche zu parsen: {txtRaw}",
+    "txt_map": "txtMap: {map}",
+    "found_service": "Dienst gefunden: target={target}, port={port}, priority={priority}, weight={weight}"
+  }
+}

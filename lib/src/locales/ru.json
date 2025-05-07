@@ -1,0 +1,36 @@
+{
+  "errors": {
+    "mdns_port_in_use": "Порт mDNS (5353) уже используется",
+    "chromecast_scan_error": "Ошибка сканирования Chromecast: {error}",
+    "dlna_scan_error": "Ошибка сканирования DLNA: {error}",
+    "unexpected_scan_error": "Неожиданная ошибка при сканировании устройств: {error}",
+    "port_in_use": "Порт {port} уже используется, невозможно сканировать устройства Chromecast",
+    "mdns_init_error": "Неизвестная ошибка при инициализации клиента mDNS",
+    "chromecast_scan_failed": "Ошибка при сканировании устройств Chromecast",
+    "parse_control_urls_failed": "Не удалось разобрать controlURLs",
+    "parse_txt_record_failed": "Не удалось разобрать запись TXT: {error}"
+  },
+  "info": {
+    "start_device_scan": "Запуск сканирования устройств, тайм-аут: {timeout}с",
+    "device_scan_completed": "Сканирование устройств завершено",
+    "start_chromecast_scan": "Запуск сканирования устройств Chromecast",
+    "standard_mdns_port": "Стандартный порт mDNS успешно используется",
+    "found_service": "Обнаружена служба: target={target}, port={port}, priority={priority}, weight={weight}",
+    "found_device": "Обнаружено устройство {deviceType}: {name} ({ip}), модель: {model}",
+    "chromecast_scan_complete": "Сканирование Chromecast завершено, найдено устройств: {count}",
+    "start_dlna_renderer_scan": "Запуск сканирования устройств DLNA Renderer",
+    "found_dlna_renderer": "Обнаружен DLNA Renderer: {name} ({ip}), модель: {model}, расположение: {location}",
+    "dlna_renderer_scan_complete": "Сканирование DLNA Renderer завершено, найдено устройств: {count}",
+    "start_dlna_server_scan": "Запуск сканирования устройств DLNA Media Server",
+    "found_dlna_server": "Обнаружен DLNA Media Server: {name} ({ip}), модель: {model}, расположение: {location}",
+    "dlna_server_scan_complete": "Сканирование DLNA Media Server завершено, найдено устройств: {count}",
+    "start_all_dlna_scan": "Запуск сканирования всех устройств DLNA",
+    "all_dlna_scan_complete": "Сканирование всех устройств DLNA завершено, найдено устройств: {count}"
+  },
+  "debug": {
+    "txt_record_type": "Тип записи TXT: {type}",
+    "nonstandard_txt_format": "Нестандартный формат записи TXT, попытка анализа: {txtRaw}",
+    "txt_map": "txtMap: {map}",
+    "found_service": "Обнаружена служба: target={target}, port={port}, priority={priority}, weight={weight}"
+  }
+}

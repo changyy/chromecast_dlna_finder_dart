@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="chromecast_dlna_finder library API docs, for the Dart programming language.">
+  <title>chromecast_dlna_finder library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">chromecast_dlna_finder</a></li>
+    <li class="self-crumb">chromecast_dlna_finder.dart</li>
+  </ol>
+  <div class="self-name">chromecast_dlna_finder</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <div class="toggle" id="theme-button" title="Toggle brightness">
+    <label for="theme">
+      <input type="checkbox" id="theme" value="light-theme">
+      <span id="dark-theme-button" class="material-symbols-outlined">
+        dark_mode
+      </span>
+      <span id="light-theme-button" class="material-symbols-outlined">
+        light_mode
+      </span>
+    </label>
+  </div>
+</header>
+<main>
+<div
+    id="dartdoc-main-content"
+    class="main-content"
+    data-above-sidebar=""
+    data-below-sidebar="chromecast_dlna_finder&#47;chromecast_dlna_finder-library-sidebar.html">
+  
+    <div>
+      
+
+      <h1>
+        <span class="kind-library">chromecast_dlna_finder</span>
+        library 
+ 
+
+      </h1>
+    </div>
+
+    
+
+
+    <section class="summary offset-anchor" id="classes">
+      <h2>Classes</h2>
+      <dl>
+          <dt id="CachedDevice">
+  <span class="name "><a href="../chromecast_dlna_finder/CachedDevice-class.html">CachedDevice</a></span> 
+
+</dt>
+<dd>
+  
+</dd>
+
+          <dt id="ChromecastDlnaFinder">
+  <span class="name "><a href="../chromecast_dlna_finder/ChromecastDlnaFinder-class.html">ChromecastDlnaFinder</a></span> 
+
+</dt>
+<dd>
+  Main class for Chromecast and DLNA device discovery
+</dd>
+
+          <dt id="DiscoveredDevice">
+  <span class="name "><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span> 
+
+</dt>
+<dd>
+  
+</dd>
+
+          <dt id="DiscoveryService">
+  <span class="name "><a href="../chromecast_dlna_finder/DiscoveryService-class.html">DiscoveryService</a></span> 
+
+</dt>
+<dd>
+  Device discovery service
+</dd>
+
+      </dl>
+    </section>
+
+    <section class="summary offset-anchor" id="enums">
+      <h2>Enums</h2>
+      <dl>
+          <dt id="DeviceType">
+  <span class="name "><a href="../chromecast_dlna_finder/DeviceType.html">DeviceType</a></span> 
+
+</dt>
+<dd>
+  裝置資料結構
+</dd>
+
+      </dl>
+    </section>
+
+
+
+
+
+
+    <section class="summary offset-anchor" id="functions">
+      <h2>Functions</h2>
+      <dl class="callables">
+          <dt id="scanAllDlnaDevices" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/scanAllDlnaDevices.html">scanAllDlnaDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAllDlnaDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Scan for all DLNA devices (including Renderers and Media Servers)
+  
+
+</dd>
+
+          <dt id="scanChromecastDevices" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/scanChromecastDevices.html">scanChromecastDevices</a></span><span class="signature">(<wbr>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Scan for Chromecast devices in the local network
+  
+
+</dd>
+
+          <dt id="scanDlnaMediaServerDevices" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/scanDlnaMediaServerDevices.html">scanDlnaMediaServerDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanDlnaMediaServerDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Scan for DLNA Media Server devices in the local network (using SSDP/UPnP)
+  
+
+</dd>
+
+          <dt id="scanDlnaRendererDevices" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/scanDlnaRendererDevices.html">scanDlnaRendererDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanDlnaRendererDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Scan for DLNA Renderer devices in the local network (using SSDP/UPnP)
+  
+
+</dd>
+
+      </dl>
+    </section>
+
+
+    <section class="summary offset-anchor" id="exceptions">
+      <h2>Exceptions / Errors</h2>
+      <dl>
+          <dt id="MdnsPortInUseException">
+  <span class="name "><a href="../chromecast_dlna_finder/MdnsPortInUseException-class.html">MdnsPortInUseException</a></span> 
+
+</dt>
+<dd>
+  Exception that may occur when scanning Chromecast devices in the local network
+</dd>
+
+      </dl>
+    </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">chromecast_dlna_finder</a></li>
+    <li class="self-crumb">chromecast_dlna_finder.dart</li>
+</ol>
+
+    <h5><span class="package-name">chromecast_dlna_finder</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="../chromecast_dlna_finder">chromecast_dlna_finder</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+    <h5>chromecast_dlna_finder library</h5>
+  </div><!--/sidebar-offcanvas-right-->
+</main>
+<footer>
+  <span class="no-break">
+    chromecast_dlna_finder
+      1.0.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

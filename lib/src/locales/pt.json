@@ -1,0 +1,36 @@
+{
+  "errors": {
+    "mdns_port_in_use": "A porta mDNS (5353) está em uso",
+    "chromecast_scan_error": "Erro de varredura do Chromecast: {error}",
+    "dlna_scan_error": "Erro de varredura DLNA: {error}",
+    "unexpected_scan_error": "Erro inesperado durante a varredura do dispositivo: {error}",
+    "port_in_use": "A porta {port} está em uso, não é possível verificar dispositivos Chromecast",
+    "mdns_init_error": "Erro desconhecido ao inicializar o cliente mDNS",
+    "chromecast_scan_failed": "Erro ao verificar dispositivos Chromecast",
+    "parse_control_urls_failed": "Falha ao analisar controlURLs",
+    "parse_txt_record_failed": "Falha ao analisar o registro TXT: {error}"
+  },
+  "info": {
+    "start_device_scan": "Iniciando varredura de dispositivos, tempo limite: {timeout}s",
+    "device_scan_completed": "Varredura de dispositivos concluída",
+    "start_chromecast_scan": "Iniciando varredura de dispositivos Chromecast",
+    "standard_mdns_port": "Uso bem-sucedido da porta mDNS padrão",
+    "found_service": "Serviço encontrado: target={target}, port={port}, priority={priority}, weight={weight}",
+    "found_device": "{deviceType} encontrado: {name} ({ip}), modelo: {model}",
+    "chromecast_scan_complete": "Varredura do Chromecast concluída, {count} dispositivos encontrados",
+    "start_dlna_renderer_scan": "Iniciando varredura de dispositivos DLNA Renderer",
+    "found_dlna_renderer": "DLNA Renderer encontrado: {name} ({ip}), modelo: {model}, localização: {location}",
+    "dlna_renderer_scan_complete": "Varredura do DLNA Renderer concluída, {count} dispositivos encontrados",
+    "start_dlna_server_scan": "Iniciando varredura de dispositivos DLNA Media Server",
+    "found_dlna_server": "DLNA Media Server encontrado: {name} ({ip}), modelo: {model}, localização: {location}",
+    "dlna_server_scan_complete": "Varredura do DLNA Media Server concluída, {count} dispositivos encontrados",
+    "start_all_dlna_scan": "Iniciando varredura de todos os dispositivos DLNA",
+    "all_dlna_scan_complete": "Varredura de todos os dispositivos DLNA concluída, {count} dispositivos encontrados"
+  },
+  "debug": {
+    "txt_record_type": "Tipo de registro TXT: {type}",
+    "nonstandard_txt_format": "Formato de registro TXT não padrão, tentando analisar: {txtRaw}",
+    "txt_map": "txtMap: {map}",
+    "found_service": "Serviço encontrado: target={target}, port={port}, priority={priority}, weight={weight}"
+  }
+}
