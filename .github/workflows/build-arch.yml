@@ -13,26 +13,37 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
+          # Linux builds
           - os: ubuntu-latest
-            output_name: chromecast_dlna_finder_linux
-            asset_name: chromecast_dlna_finder_linux
+            output_name: chromecast_dlna_finder_linux_amd64
+            asset_name: chromecast_dlna_finder_linux_amd64
+            arch: amd64
+          
+          # Windows builds
           - os: windows-latest
-            output_name: chromecast_dlna_finder_windows.exe
-            asset_name: chromecast_dlna_finder_windows
-          - os: macos-latest
-            output_name: chromecast_dlna_finder_macos
-            asset_name: chromecast_dlna_finder_macos
+            output_name: chromecast_dlna_finder_windows_amd64.exe
+            asset_name: chromecast_dlna_finder_windows_amd64
+            arch: amd64
+          
+          # macOS builds - both architectures
+          - os: macos-13    # Intel x86_64
+            output_name: chromecast_dlna_finder_macos_amd64
+            asset_name: chromecast_dlna_finder_macos_amd64
+            arch: amd64
+          - os: macos-14    # Apple Silicon arm64
+            output_name: chromecast_dlna_finder_macos_arm64
+            asset_name: chromecast_dlna_finder_macos_arm64
+            arch: arm64
 
     runs-on: ${{ matrix.os }}
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+        uses: dart-lang/setup-dart@v1.6.0
       
       - name: Get version
         id: get_version
@@ -56,52 +67,113 @@ jobs:
       - name: Install dependencies
         run: dart pub get
       
-      - name: Create resources directory
-        run: mkdir -p resources
+      - name: Parse pubspec.yaml for files to include
+        id: parse_pubspec
+        run: |
+          echo "Parsing pubspec.yaml for files entries..."
+          
+          # Create a temporary file to store the extracted paths
+          touch file_patterns.txt
+          
+          # Extract files entries from pubspec.yaml
+          # Look for lines after 'files:' and before the next section (starts with a word followed by :)
+          awk '/^files:/,/^[a-zA-Z]+:/' pubspec.yaml | grep -v '^files:' | grep -v '^[a-zA-Z]\+:' | sed 's/^[ \t-]*//' | grep -v '^$' > file_patterns.txt
+          
+          # Display extracted patterns
+          echo "Extracted file patterns from pubspec.yaml:"
+          cat file_patterns.txt
+          
+          # Create a temp directory for files collection
+          mkdir -p temp_files
+          
+          # Process each pattern
+          while IFS= read -r pattern; do
+            # Skip empty lines
+            if [ -z "$pattern" ]; then
+              continue
+            fi
+            
+            # Remove quotes if present
+            pattern=$(echo "$pattern" | sed 's/^["'\'']//' | sed 's/["'\'']$//')
+            
+            echo "Processing pattern: $pattern"
+            
+            # Get the base directory from the pattern (before the wildcard)
+            base_dir=$(echo "$pattern" | sed 's/\*.*$//' | xargs dirname)
+            echo "Base directory: $base_dir"
+            
+            # Find files matching the pattern
+            for file in $(ls $pattern 2>/dev/null || echo ""); do
+              if [ -f "$file" ]; then
+                # Create the exact same directory structure in temp_files
+                mkdir -p "temp_files/$(dirname "$file")"
+                
+                # Copy file preserving path
+                cp "$file" "temp_files/$(dirname "$file")/"
+                echo "Copied file: $file to temp_files/$(dirname "$file")/"
+              fi
+            done
+          done < file_patterns.txt
+          
+          echo "Files collection completed with directory structure preserved"
+          echo "Directory structure in temp_files:"
+          find temp_files -type d | sort
         shell: bash
       
-      - name: Copy locale files
-        run: cp -r lib/src/locales/* resources/
+      - name: Show architecture info
+        run: |
+          echo "OS: ${{ matrix.os }}"
+          echo "Architecture: ${{ matrix.arch }}"
+          uname -a || echo "uname not available"
         shell: bash
       
       - name: Build executable
         run: dart compile exe bin/chromecast_dlna_finder.dart -o ${{ matrix.output_name }}
       
       # Create platform-specific zip archives with resources
-      - name: Package Windows
-        if: matrix.os == 'windows-latest'
+      - name: Package artifact
         run: |
-          mkdir ${{ matrix.asset_name }}-${{ env.VERSION }}
+          mkdir -p ${{ matrix.asset_name }}-${{ env.VERSION }}
           cp ${{ matrix.output_name }} ${{ matrix.asset_name }}-${{ env.VERSION }}/
-          cp -r resources ${{ matrix.asset_name }}-${{ env.VERSION }}/
-          7z a ${{ matrix.asset_name }}-${{ env.VERSION }}.zip ${{ matrix.asset_name }}-${{ env.VERSION }}
-        shell: bash
-      
-      - name: Package MacOS
-        if: matrix.os == 'macos-latest'
-        run: |
-          mkdir ${{ matrix.asset_name }}-${{ env.VERSION }}
-          cp ${{ matrix.output_name }} ${{ matrix.asset_name }}-${{ env.VERSION }}/
-          cp -r resources ${{ matrix.asset_name }}-${{ env.VERSION }}/
-          zip -r ${{ matrix.asset_name }}-${{ env.VERSION }}.zip ${{ matrix.asset_name }}-${{ env.VERSION }}
-        shell: bash
-      
-      - name: Package Linux
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          mkdir ${{ matrix.asset_name }}-${{ env.VERSION }}
-          cp ${{ matrix.output_name }} ${{ matrix.asset_name }}-${{ env.VERSION }}/
-          cp -r resources ${{ matrix.asset_name }}-${{ env.VERSION }}/
-          zip -r ${{ matrix.asset_name }}-${{ env.VERSION }}.zip ${{ matrix.asset_name }}-${{ env.VERSION }}
+          
+          # Copy all files from temp_files preserving original structure
+          if [ -d "temp_files" ]; then
+            cp -r temp_files/* ${{ matrix.asset_name }}-${{ env.VERSION }}/
+          fi
+          
+          # Create a README file
+          cat > ${{ matrix.asset_name }}-${{ env.VERSION }}/README.txt << EOL
+Chromecast DLNA Finder v${{ env.VERSION }}
+Platform: ${{ matrix.os }}
+Architecture: ${{ matrix.arch }}
+
+This package contains:
+1. The executable binary for your platform
+2. Resource files (localization, etc.)
+
+To use:
+- Extract this package
+- Run the executable from the command line
+- Keep the directory structure intact
+
+For more information, visit: https://github.com/changyy/chromecast_dlna_finder_dart
+EOL
+          
+          # Create ZIP file (using appropriate command for the platform)
+          if [[ "${{ matrix.os }}" == windows-* ]]; then
+            7z a ${{ matrix.asset_name }}-${{ env.VERSION }}.zip ${{ matrix.asset_name }}-${{ env.VERSION }}
+          else
+            zip -r ${{ matrix.asset_name }}-${{ env.VERSION }}.zip ${{ matrix.asset_name }}-${{ env.VERSION }}
+          fi
         shell: bash
       
       # Upload artifacts for all builds
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}-${{ env.VERSION }}
           path: ${{ matrix.asset_name }}-${{ env.VERSION }}.zip
-      
+  
   # Create release when a tag is pushed
   release:
     needs: build
@@ -109,6 +181,9 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
       - name: Get version
         id: get_version
         run: |
@@ -129,16 +204,17 @@ jobs:
         shell: bash
       
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
       
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            chromecast_dlna_finder_linux-${{ env.VERSION }}/chromecast_dlna_finder_linux-${{ env.VERSION }}.zip
-            chromecast_dlna_finder_macos-${{ env.VERSION }}/chromecast_dlna_finder_macos-${{ env.VERSION }}.zip
-            chromecast_dlna_finder_windows-${{ env.VERSION }}/chromecast_dlna_finder_windows-${{ env.VERSION }}.zip
+            chromecast_dlna_finder_linux_amd64-${{ env.VERSION }}/chromecast_dlna_finder_linux_amd64-${{ env.VERSION }}.zip
+            chromecast_dlna_finder_macos_amd64-${{ env.VERSION }}/chromecast_dlna_finder_macos_amd64-${{ env.VERSION }}.zip
+            chromecast_dlna_finder_macos_arm64-${{ env.VERSION }}/chromecast_dlna_finder_macos_arm64-${{ env.VERSION }}.zip
+            chromecast_dlna_finder_windows_amd64-${{ env.VERSION }}/chromecast_dlna_finder_windows_amd64-${{ env.VERSION }}.zip
           draft: false
           prerelease: false
           name: Release ${{ env.VERSION }}
@@ -147,13 +223,22 @@ jobs:
             
             Cross-platform binaries for the Chromecast DLNA Finder tool.
             
+            ## Download Options
+            
+            - **macOS (Intel x86_64)**: chromecast_dlna_finder_macos_amd64-${{ env.VERSION }}.zip
+            - **macOS (Apple Silicon arm64)**: chromecast_dlna_finder_macos_arm64-${{ env.VERSION }}.zip
+            - **Windows (x86_64)**: chromecast_dlna_finder_windows_amd64-${{ env.VERSION }}.zip
+            - **Linux (x86_64)**: chromecast_dlna_finder_linux_amd64-${{ env.VERSION }}.zip
+            
             ## Installation
             
-            Download the appropriate zip file for your platform, extract it, and run the executable.
+            1. Download the appropriate zip file for your platform
+            2. Extract the zip file
+            3. Run the executable
             
-            ## Included Files
+            ## Notes
             
-            - Executable binary for your platform
-            - Localization resource files
+            - All packages include necessary resource files
+            - Do not modify the directory structure
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
