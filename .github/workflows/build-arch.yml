@@ -1,0 +1,272 @@
+name: Build Cross-Platform Executables
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux builds (x86_64)
+          - os: ubuntu-latest
+            output_name: chromecast_dlna_finder_linux_amd64
+            asset_name: chromecast_dlna_finder_linux_amd64
+            arch: amd64
+            cross_compile: false
+          
+          # Linux ARM builds (32-bit)
+          # This appears to be working based on your feedback
+          - os: ubuntu-22.04-arm
+            output_name: chromecast_dlna_finder_linux_arm
+            asset_name: chromecast_dlna_finder_linux_arm
+            arch: arm
+            cross_compile: false
+          
+          # Linux ARM64 builds (64-bit)
+          # Using Docker with QEMU as a fallback since ubuntu-22.04-arm64 isn't available
+          - os: ubuntu-latest
+            output_name: chromecast_dlna_finder_linux_arm64
+            asset_name: chromecast_dlna_finder_linux_arm64
+            arch: arm64
+            cross_compile: false
+            use_docker: true
+          
+          # Windows builds
+          - os: windows-latest
+            output_name: chromecast_dlna_finder_windows_amd64.exe
+            asset_name: chromecast_dlna_finder_windows_amd64
+            arch: amd64
+            cross_compile: false
+          
+          # macOS builds - both architectures
+          - os: macos-13    # Intel x86_64
+            output_name: chromecast_dlna_finder_macos_amd64
+            asset_name: chromecast_dlna_finder_macos_amd64
+            arch: amd64
+            cross_compile: false
+          - os: macos-14    # Apple Silicon arm64
+            output_name: chromecast_dlna_finder_macos_arm64
+            asset_name: chromecast_dlna_finder_macos_arm64
+            arch: arm64
+            cross_compile: false
+
+    # Use runner specified in matrix.os
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # For ARM64 build, use Docker with QEMU
+      - name: Set up QEMU (for ARM64)
+        if: matrix.use_docker == true
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build ARM64 in Docker
+        if: matrix.use_docker == true
+        run: |
+          docker run --platform linux/arm64 --rm -v ${{ github.workspace }}:/app -w /app dart:stable \
+          bash -c "dart pub get && dart compile exe bin/chromecast_dlna_finder.dart -o ${{ matrix.output_name }}"
+
+      # For non-Docker builds, use the standard approach
+      - name: Setup Dart (non-Docker)
+        if: matrix.use_docker != true
+        uses: dart-lang/setup-dart@v1.6.0
+      
+      - name: Get version
+        id: get_version
+        run: |
+          # Always get version from pubspec.yaml as the primary source
+          VERSION=$(grep -m 1 'version:' pubspec.yaml | awk '{print $2}' | tr -d "'\"")
+          echo "Using version from pubspec.yaml: $VERSION"
+          # Only for display purposes, show if tag version is different
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG_VERSION="${{ github.ref_name }}"
+            TAG_VERSION=${TAG_VERSION#v}
+            if [[ "$TAG_VERSION" != "$VERSION" ]]; then
+              echo "Note: Tag version ($TAG_VERSION) differs from pubspec.yaml version ($VERSION)"
+              echo "Using pubspec.yaml version for consistency with pub.dev"
+            fi
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        shell: bash
+      
+      - name: Install dependencies (non-Docker)
+        if: matrix.use_docker != true
+        run: dart pub get
+      
+      - name: Check for files in pubspec
+        id: check_files
+        run: |
+          echo "Checking for 'files:' section in pubspec.yaml..."
+          if [ -f "pubspec.yaml" ]; then
+            echo "pubspec.yaml found."
+            if grep -q "^files:" pubspec.yaml; then
+              echo "Files section found in pubspec.yaml."
+              echo "has_files=true" >> $GITHUB_OUTPUT
+            else
+              echo "No 'files:' section found in pubspec.yaml."
+              echo "has_files=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "pubspec.yaml not found in the current directory."
+            echo "has_files=false" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+      
+      - name: Copy resource files
+        if: steps.check_files.outputs.has_files == 'true'
+        run: |
+          echo "Copying resource files based on pubspec.yaml..."
+          mkdir -p temp_files
+          
+          # Simpler approach: just copy the common resource directories
+          if [ -d "lib/src/locales" ]; then
+            echo "Copying lib/src/locales directory..."
+            mkdir -p temp_files/lib/src/locales
+            cp -r lib/src/locales/* temp_files/lib/src/locales/
+          fi
+          
+          # Add more resource directories as needed
+          
+          echo "Resource files copied to temp_files directory."
+          find temp_files -type f | sort
+        shell: bash
+      
+      - name: Show architecture info
+        run: |
+          echo "OS: ${{ matrix.os }}"
+          echo "Architecture: ${{ matrix.arch }}"
+          uname -a || echo "uname not available"
+        shell: bash
+      
+      - name: Build executable (non-Docker)
+        if: matrix.use_docker != true
+        run: dart compile exe bin/chromecast_dlna_finder.dart -o ${{ matrix.output_name }}
+      
+      # Create platform-specific zip archives with resources
+      - name: Package artifact
+        run: |
+          mkdir -p ${{ matrix.asset_name }}-${{ env.VERSION }}
+          cp ${{ matrix.output_name }} ${{ matrix.asset_name }}-${{ env.VERSION }}/
+          
+          # Copy all files from temp_files preserving original structure
+          if [ -d "temp_files" ]; then
+            cp -r temp_files/* ${{ matrix.asset_name }}-${{ env.VERSION }}/
+          fi
+          
+          # Create a README file using separate echo commands
+          README_FILE="${{ matrix.asset_name }}-${{ env.VERSION }}/README.txt"
+          echo "Chromecast DLNA Finder v${{ env.VERSION }}" > $README_FILE
+          echo "Platform: ${{ matrix.os }}" >> $README_FILE
+          echo "Architecture: ${{ matrix.arch }}" >> $README_FILE
+          echo "" >> $README_FILE
+          echo "This package contains:" >> $README_FILE
+          echo "1. The executable binary for your platform" >> $README_FILE
+          echo "2. Resource files (localization, etc.)" >> $README_FILE
+          echo "" >> $README_FILE
+          echo "To use:" >> $README_FILE
+          echo "- Extract this package" >> $README_FILE
+          echo "- Run the executable from the command line" >> $README_FILE
+          echo "- Keep the directory structure intact" >> $README_FILE
+          echo "" >> $README_FILE
+          echo "For more information, visit: https://github.com/changyy/chromecast_dlna_finder_dart" >> $README_FILE
+          
+          # Create ZIP file (using appropriate command for the platform)
+          if [[ "${{ matrix.os }}" == windows-* ]]; then
+            7z a ${{ matrix.asset_name }}-${{ env.VERSION }}.zip ${{ matrix.asset_name }}-${{ env.VERSION }}
+          else
+            zip -r ${{ matrix.asset_name }}-${{ env.VERSION }}.zip ${{ matrix.asset_name }}-${{ env.VERSION }}
+          fi
+        shell: bash
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}-${{ env.VERSION }}
+          path: ${{ matrix.asset_name }}-${{ env.VERSION }}.zip
+  
+  # Create release when a tag is pushed
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get version
+        id: get_version
+        run: |
+          # Always get version from pubspec.yaml as the primary source
+          VERSION=$(grep -m 1 'version:' pubspec.yaml | awk '{print $2}' | tr -d "'\"")
+          echo "Using version from pubspec.yaml: $VERSION"
+          # Only for display purposes, show if tag version is different
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG_VERSION="${{ github.ref_name }}"
+            TAG_VERSION=${TAG_VERSION#v}
+            if [[ "$TAG_VERSION" != "$VERSION" ]]; then
+              echo "Note: Tag version ($TAG_VERSION) differs from pubspec.yaml version ($VERSION)"
+              echo "Using pubspec.yaml version for consistency with pub.dev"
+            fi
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        shell: bash
+      
+      # Download artifacts
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      # Debug - list what was downloaded
+      - name: List downloaded files
+        run: find artifacts -type f | sort
+        shell: bash
+      
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/**/*.zip
+          draft: false
+          prerelease: false
+          name: Release ${{ env.VERSION }}
+          body: |
+            # Chromecast DLNA Finder v${{ env.VERSION }}
+            
+            Cross-platform binaries for the Chromecast DLNA Finder tool.
+            
+            ## Download Options
+            
+            - **macOS (Intel x86_64)**: chromecast_dlna_finder_macos_amd64-${{ env.VERSION }}.zip
+            - **macOS (Apple Silicon arm64)**: chromecast_dlna_finder_macos_arm64-${{ env.VERSION }}.zip
+            - **Windows (x86_64)**: chromecast_dlna_finder_windows_amd64-${{ env.VERSION }}.zip
+            - **Linux (x86_64)**: chromecast_dlna_finder_linux_amd64-${{ env.VERSION }}.zip
+            - **Linux (ARM 32-bit)**: chromecast_dlna_finder_linux_arm-${{ env.VERSION }}.zip
+            - **Linux (ARM64 64-bit)**: chromecast_dlna_finder_linux_arm64-${{ env.VERSION }}.zip
+            
+            ## Installation
+            
+            1. Download the appropriate zip file for your platform
+            2. Extract the zip file
+            3. Run the executable
+            
+            ## Notes
+            
+            - All packages include necessary resource files
+            - Do not modify the directory structure
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
