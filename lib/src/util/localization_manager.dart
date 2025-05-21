@@ -17,7 +17,7 @@ class LocalizationManager {
 
   /// 是否已完成初始化
   bool _initialized = false;
-  Completer<void> _initCompleter = Completer<void>();
+  Completer<void>? _initCompleter; // 改為 nullable
 
   /// 是否啟用詳細的除錯模式
   bool _debugMode = false;
@@ -46,26 +46,37 @@ class LocalizationManager {
     if (_initialized) {
       return;
     }
+    if (_initCompleter != null && !_initCompleter!.isCompleted) {
+      return _initCompleter!.future;
+    }
+    _initCompleter = Completer<void>();
+    try {
+      _currentLocale =
+          locale == null || locale.isEmpty || locale == 'auto'
+              ? getSystemLocale()
+              : locale;
 
-    _currentLocale =
-        locale == null || locale.isEmpty || locale == 'auto'
-            ? getSystemLocale()
-            : locale;
+      // 加載翻譯文件
+      await _loadTranslations();
 
-    // 加載翻譯文件
-    await _loadTranslations();
-
-    _initialized = true;
-    _initCompleter.complete();
+      _initialized = true;
+      if (!_initCompleter!.isCompleted) {
+        _initCompleter!.complete();
+      }
+    } catch (e) {
+      if (!_initCompleter!.isCompleted) {
+        _initCompleter!.completeError(e);
+      }
+      rethrow;
+    }
   }
 
   /// 確保已初始化
   Future<void> _ensureInitialized() async {
     if (!_initialized) {
-      if (!_initCompleter.isCompleted) {
-        await _initCompleter.future;
+      if (_initCompleter != null && !_initCompleter!.isCompleted) {
+        await _initCompleter!.future;
       } else {
-        _initCompleter = Completer<void>();
         await init();
       }
     }
@@ -113,7 +124,7 @@ class LocalizationManager {
             );
           }
           return;
-        } catch (_) {
+        } catch (e) {
           // ignore, try next fallback
         }
       }

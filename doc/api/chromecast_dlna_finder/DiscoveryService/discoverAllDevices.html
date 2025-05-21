@@ -77,93 +77,121 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
   <pre class="language-dart"><code class="language-dart">Future&lt;Map&lt;String, List&lt;DiscoveredDevice&gt;&gt;&gt; discoverAllDevices({
   Duration timeout = const Duration(seconds: 5),
 }) async {
+  if (_eventController.isClosed) {
+    throw StateError(
+      &#39;DiscoveryService already disposed: _eventController is closed&#39;,
+    );
+  }
   final result = &lt;String, List&lt;DiscoveredDevice&gt;&gt;{
     &#39;chromecast&#39;: [],
     &#39;dlna&#39;: [],
+    &#39;airplay&#39;: [], &#47;&#47; 新增 AirPlay 結果欄位
   };
-
   final errors = &lt;String&gt;[];
 
+  &#47;&#47; 通知開始整體搜尋
+  _safeAddEvent(SearchStartedEvent(&#39;all&#39;, &#39;DiscoveryService&#39;));
+
+  &#47;&#47; 包裝函數：掃描 Chromecast
+  Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanChromecastDevicesWithEvents() async {
+    _safeAddEvent(SearchStartedEvent(&#39;chromecast&#39;, &#39;mDNS&#39;));
+    try {
+      final devices = await scanChromecastDevices(
+        onDeviceFound: (device) {
+          _safeAddEvent(DeviceFoundEvent(device, &#39;mDNS&#39;));
+        },
+      );
+      _safeAddEvent(
+        SearchCompleteEvent(&#39;chromecast&#39;, devices.length, &#39;mDNS&#39;),
+      );
+      return devices;
+    } catch (e) {
+      _safeAddEvent(SearchErrorEvent(&#39;chromecast&#39;, e.toString(), &#39;mDNS&#39;));
+      return [];
+    }
+  }
+
+  &#47;&#47; 包裝函數：掃描 DLNA
+  Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanAllDlnaDevicesWithEvents() async {
+    _safeAddEvent(SearchStartedEvent(&#39;dlna&#39;, &#39;SSDP&#39;));
+    try {
+      final devices = await scanAllDlnaDevices(
+        timeout: timeout,
+        onDeviceFound: (device) {
+          _safeAddEvent(DeviceFoundEvent(device, &#39;SSDP&#39;));
+        },
+      );
+      _safeAddEvent(SearchCompleteEvent(&#39;dlna&#39;, devices.length, &#39;SSDP&#39;));
+      return devices;
+    } catch (e) {
+      _safeAddEvent(SearchErrorEvent(&#39;dlna&#39;, e.toString(), &#39;SSDP&#39;));
+      return [];
+    }
+  }
+
+  &#47;&#47; 包裝函數：掃描 AirPlay RX
+  Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanAirplayRxDevicesWithEvents() async {
+    _safeAddEvent(SearchStartedEvent(&#39;airplay_rx&#39;, &#39;mDNS&#39;));
+    try {
+      final devices = await scanAirplayRxDevices(
+        onDeviceFound: (device) {
+          _safeAddEvent(DeviceFoundEvent(device, &#39;mDNS&#39;));
+        },
+      );
+      _safeAddEvent(
+        SearchCompleteEvent(&#39;airplay_rx&#39;, devices.length, &#39;mDNS&#39;),
+      );
+      return devices;
+    } catch (e) {
+      _safeAddEvent(SearchErrorEvent(&#39;airplay_rx&#39;, e.toString(), &#39;mDNS&#39;));
+      return [];
+    }
+  }
+
+  &#47;&#47; 包裝函數：掃描 AirPlay TX
+  Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanAirplayTxDevicesWithEvents() async {
+    _safeAddEvent(SearchStartedEvent(&#39;airplay_tx&#39;, &#39;mDNS&#39;));
+    try {
+      final devices = await scanAirplayTxDevices(
+        onDeviceFound: (device) {
+          _safeAddEvent(DeviceFoundEvent(device, &#39;mDNS&#39;));
+        },
+      );
+      _safeAddEvent(
+        SearchCompleteEvent(&#39;airplay_tx&#39;, devices.length, &#39;mDNS&#39;),
+      );
+      return devices;
+    } catch (e) {
+      _safeAddEvent(SearchErrorEvent(&#39;airplay_tx&#39;, e.toString(), &#39;mDNS&#39;));
+      return [];
+    }
+  }
+
   try {
-    &#47;&#47; 通知開始整體搜尋
-    _eventController.add(SearchStartedEvent(&#39;all&#39;, &#39;DiscoveryService&#39;));
-
-    &#47;&#47; 建立自訂的包裝函數來攔截和發送裝置通知
-    scanChromecastDevicesWithEvents() async {
-      _eventController.add(SearchStartedEvent(&#39;chromecast&#39;, &#39;mDNS&#39;));
-      try {
-        final devices = await scanChromecastDevices(
-          onDeviceFound: (device) {
-            _eventController.add(DeviceFoundEvent(device, &#39;mDNS&#39;));
-          },
-        );
-        _eventController.add(
-          SearchCompleteEvent(&#39;chromecast&#39;, devices.length, &#39;mDNS&#39;),
-        );
-        return devices;
-      } catch (e) {
-        _eventController.add(
-          SearchErrorEvent(&#39;chromecast&#39;, e.toString(), &#39;mDNS&#39;),
-        );
-        rethrow;
-      }
+    &#47;&#47; 並行掃描 chromecast, dlna, airplay_rx, airplay_tx
+    final chromecastDevicesFuture = scanChromecastDevicesWithEvents();
+    final dlnaDevicesFuture = scanAllDlnaDevicesWithEvents();
+    final airplayRxDevicesFuture = scanAirplayRxDevicesWithEvents();
+    final airplayTxDevicesFuture = scanAirplayTxDevicesWithEvents();
+    final results = await Future.wait([
+      chromecastDevicesFuture,
+      dlnaDevicesFuture,
+      airplayRxDevicesFuture,
+      airplayTxDevicesFuture,
+    ]);
+    result[&#39;chromecast&#39;] = results[0];
+    result[&#39;dlna&#39;] = results[1];
+    &#47;&#47; 將 airplay_rx, airplay_tx 合併到 airplay，並去重
+    final airplayMap = &lt;String, DiscoveredDevice&gt;{};
+    for (final d in results[2]) {
+      final key = d.ip + (d.id ?? &#39;&#39;) + (d.name);
+      airplayMap[key] = d;
     }
-
-    scanAllDlnaDevicesWithEvents() async {
-      _eventController.add(SearchStartedEvent(&#39;dlna&#39;, &#39;SSDP&#39;));
-      try {
-        final devices = await scanAllDlnaDevices(
-          timeout: timeout,
-          onDeviceFound: (device) {
-            _eventController.add(DeviceFoundEvent(device, &#39;SSDP&#39;));
-          },
-        );
-        _eventController.add(
-          SearchCompleteEvent(&#39;dlna&#39;, devices.length, &#39;SSDP&#39;),
-        );
-        return devices;
-      } catch (e) {
-        _eventController.add(SearchErrorEvent(&#39;dlna&#39;, e.toString(), &#39;SSDP&#39;));
-        rethrow;
-      }
+    for (final d in results[3]) {
+      final key = d.ip + (d.id ?? &#39;&#39;) + (d.name);
+      airplayMap[key] = d;
     }
-
-    &#47;&#47; Asynchronously scan Chromecast devices
-    final chromecastTask = scanChromecastDevicesWithEvents()
-        .then((devices) {
-          result[&#39;chromecast&#39;] = devices;
-        })
-        .catchError((e) async {
-          await _logger.error(
-            &#39;errors.chromecast_scan_error&#39;,
-            tag: &#39;Discovery&#39;,
-            error: e,
-            params: {&#39;error&#39;: e.toString()},
-          );
-          if (e is MdnsPortInUseException) {
-            errors.add(&#39;errors.mdns_port_in_use&#39;);
-          } else {
-            errors.add(&#39;errors.chromecast_scan_error&#39;);
-          }
-        });
-
-    &#47;&#47; Asynchronously scan DLNA devices
-    final dlnaTask = scanAllDlnaDevicesWithEvents()
-        .then((devices) {
-          result[&#39;dlna&#39;] = devices;
-        })
-        .catchError((e) async {
-          await _logger.error(
-            &#39;errors.dlna_scan_error&#39;,
-            tag: &#39;Discovery&#39;,
-            error: e,
-            params: {&#39;error&#39;: e.toString()},
-          );
-          errors.add(&#39;errors.dlna_scan_error&#39;);
-        });
-
-    &#47;&#47; Wait for all scans to complete
-    await Future.wait([chromecastTask, dlnaTask]);
+    result[&#39;airplay&#39;] = airplayMap.values.toList();
   } catch (e) {
     await _logger.error(
       &#39;errors.unexpected_scan_error&#39;,
@@ -185,7 +213,11 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
     if (device.isChromecast &amp;&amp; device.id != null) {
       return &#39;chromecast_${device.id}&#39;;
     }
-
+    &#47;&#47; AirPlay 裝置唯一識別
+    if (device.type == DeviceType.airplay) {
+      &#47;&#47; 若有 name 優先用 name
+      return &#39;airplay_${device.name}&#39;;
+    }
     &#47;&#47; 如果有 location，結合 IP 和 location 作為識別
     if (device.location != null) {
       &#47;&#47; 對於 DLNA renderer，加上控制 URL 以更精確識別
@@ -194,12 +226,10 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
       }
       return &#39;device_${device.type}_${device.location}&#39;;
     }
-
     &#47;&#47; 如果 model 非空，結合 name、IP 和 model
     if (device.model != null) {
       return &#39;device_${device.name}_${device.ip}_${device.model}&#39;;
     }
-
     &#47;&#47; 最後的退路：使用名稱+IP+類型的組合
     return &#39;device_${device.name}_${device.ip}_${device.type}&#39;;
   }
@@ -244,6 +274,26 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
     }
   }
 
+  &#47;&#47; 處理 AirPlay 裝置
+  for (final device in result[&#39;airplay&#39;]!) {
+    final key = getDeviceKey(device);
+    if (uniqueDevices.containsKey(key)) {
+      await _logger.debug(
+        &#39;debug.duplicate_device&#39;,
+        tag: &#39;Discovery&#39;,
+        params: {
+          &#39;type&#39;: &#39;AirPlay&#39;,
+          &#39;name&#39;: device.name,
+          &#39;ip&#39;: device.ip,
+          &#39;key&#39;: key,
+        },
+      );
+      duplicates.add(device);
+    } else {
+      uniqueDevices[key] = device;
+    }
+  }
+
   &#47;&#47; 更新結果中的裝置清單，移除重複項
   if (duplicates.isNotEmpty) {
     await _logger.info(
@@ -259,6 +309,10 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
             .toList();
     result[&#39;dlna&#39;] =
         result[&#39;dlna&#39;]!
+            .where((device) =&gt; !duplicates.contains(device))
+            .toList();
+    result[&#39;airplay&#39;] =
+        result[&#39;airplay&#39;]!
             .where((device) =&gt; !duplicates.contains(device))
             .toList();
   }
@@ -293,6 +347,33 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
   result[&#39;dlna_renderer&#39;] = dlnaRenderers;
   result[&#39;dlna_media_server&#39;] = dlnaMediaServers;
 
+  &#47;&#47; Categorize AirPlay devices
+  final airplayRxDevices = &lt;String, DiscoveredDevice&gt;{};
+  final airplayTxDevices = &lt;String, DiscoveredDevice&gt;{};
+  for (final device in result[&#39;airplay&#39;]!) {
+    final mdnsTypes = device.mdnsTypes ?? &lt;String&gt;[];
+    final hasAirplay = mdnsTypes.contains(&#39;_airplay._tcp&#39;);
+    final hasRaop = mdnsTypes.contains(&#39;_raop._tcp&#39;);
+    final key = device.ip + (device.id ?? &#39;&#39;) + (device.name);
+    &#47;&#47; RX: 只收錄有 _airplay._tcp 的裝置
+    if (hasAirplay) {
+      airplayRxDevices[key] = device;
+    }
+    &#47;&#47; TX: 只收錄有 _raop._tcp 的裝置
+    if (hasRaop) {
+      airplayTxDevices[key] = device;
+    }
+  }
+  result[&#39;airplay_rx&#39;] = airplayRxDevices.values.toList();
+  result[&#39;airplay_tx&#39;] = airplayTxDevices.values.toList();
+  &#47;&#47; airplay 只保留唯一裝置（不重複）
+  final airplayUnique = &lt;String, DiscoveredDevice&gt;{};
+  for (final device in result[&#39;airplay&#39;]!) {
+    final key = device.ip + (device.id ?? &#39;&#39;) + (device.name);
+    airplayUnique[key] = device;
+  }
+  result[&#39;airplay&#39;] = airplayUnique.values.toList();
+
   &#47;&#47; Add error information
   result[&#39;errors&#39;] =
       errors
@@ -303,7 +384,7 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
           .toList();
 
   await _logger.debug(
-    &#39;Device discovery complete: Chromecast=${result[&#39;chromecast&#39;]!.length}, DLNA=${result[&#39;dlna&#39;]!.length}, Errors=${errors.length}&#39;,
+    &#39;Device discovery complete: Chromecast=[0m${result[&#39;chromecast&#39;]!.length}, DLNA=${result[&#39;dlna&#39;]!.length}, Errors=${errors.length}&#39;,
     tag: &#39;Discovery&#39;,
   );
 
@@ -336,7 +417,7 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.1.0
+      1.1.1
   </span>
   
 </footer>

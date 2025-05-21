@@ -2,7 +2,6 @@
 // 不依賴 flutter framework，純 Dart 可執行
 import 'package:chromecast_dlna_finder/chromecast_dlna_finder.dart';
 import 'package:chromecast_dlna_finder/src/util/logger.dart';
-import 'package:chromecast_dlna_finder/src/discovery/discovery_events.dart';
 
 Future<void> main() async {
   // 初始化 logger 並設置為廣播模式

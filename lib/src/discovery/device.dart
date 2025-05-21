@@ -4,6 +4,7 @@ enum DeviceType {
   dlnaMediaServer,
   chromecastDongle,
   chromecastAudio,
+  airplay, // 新增 AirPlay 型別
   unknown,
 }
 
@@ -21,6 +22,7 @@ class DiscoveredDevice {
   final String? friendlyName; // Chromecast TXT record 的 fn
   final int? port; // Chromecast SRV record 的 port
   final Map<String, String>? extra; // Chromecast 其他 TXT 欄位
+  final List<String>? mdnsTypes; // 新增: mDNS 服務型別
 
   DiscoveredDevice({
     required this.name,
@@ -34,6 +36,7 @@ class DiscoveredDevice {
     this.friendlyName,
     this.port,
     this.extra,
+    this.mdnsTypes, // 新增
   });
 
   bool get isDlnaRenderer =>
@@ -61,6 +64,7 @@ class DiscoveredDevice {
       if (friendlyName != null) 'friendlyName': friendlyName,
       if (port != null) 'port': port,
       if (extra != null) 'extra': extra,
+      if (mdnsTypes != null) 'mdnsTypes': mdnsTypes, // 新增
     };
   }
 
@@ -126,6 +130,28 @@ class DiscoveredDevice {
       type: DeviceType.dlnaMediaServer,
       model: model,
       location: location,
+    );
+  }
+
+  /// AirPlay TXT record 轉換建構
+  factory DiscoveredDevice.fromAirplay({
+    required String ip,
+    required int port,
+    required String serviceName,
+    required Map<String, String> txtMap,
+    List<String>? mdnsTypes, // 新增
+  }) {
+    return DiscoveredDevice(
+      name: txtMap['fn'] ?? txtMap['cn'] ?? serviceName, // AirPlay 常見欄位 fn/cn
+      ip: ip,
+      type: DeviceType.airplay,
+      model: txtMap['md'],
+      location: serviceName,
+      id: txtMap['id'],
+      friendlyName: txtMap['fn'] ?? txtMap['cn'],
+      port: port,
+      extra: txtMap,
+      mdnsTypes: mdnsTypes, // 新增
     );
   }
 }

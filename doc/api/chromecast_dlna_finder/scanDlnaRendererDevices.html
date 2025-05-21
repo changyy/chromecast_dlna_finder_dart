@@ -83,10 +83,12 @@
   final logger = AppLogger();
   await logger.info(&#39;info.start_dlna_renderer_scan&#39;, tag: &#39;SSDP&#39;);
   final List&lt;DiscoveredDevice&gt; devices = [];
-  final RawDatagramSocket socket = await RawDatagramSocket.bind(
-    InternetAddress.anyIPv4,
-    0,
-  );
+  RawDatagramSocket socket;
+  try {
+    socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+  } catch (e) {
+    return [];
+  }
   &#47;&#47; SSDP discovery message
   const String ssdpRequest =
       &#39;M-SEARCH * HTTP&#47;1.1\r\n&#39;
@@ -100,85 +102,107 @@
 
   final responses = &lt;String, DiscoveredDevice&gt;{};
   final completer = Completer&lt;void&gt;();
-  socket.listen((RawSocketEvent event) async {
-    if (event == RawSocketEvent.read) {
-      final datagram = socket.receive();
-      if (datagram != null) {
-        final resp = utf8.decode(datagram.data);
-        final ip = datagram.address.address;
-        if (resp.contains(&#39;MediaRenderer&#39;)) {
-          &#47;&#47; Parse device information
-          final nameMatch = RegExp(r&#39;\nSERVER: (.+)&#39;).firstMatch(resp);
-          final name = nameMatch?.group(1) ?? &#39;DLNA Renderer&#39;;
-          &#47;&#47; Parse LOCATION field
-          final locationMatch = RegExp(
-            r&#39;LOCATION:\s*(.+)\r?\n&#39;,
-            caseSensitive: false,
-          ).firstMatch(resp);
-          final location = locationMatch?.group(1)?.trim();
+  socket.listen(
+    (RawSocketEvent event) async {
+      if (event == RawSocketEvent.read) {
+        final datagram = socket.receive();
+        if (datagram != null) {
+          final resp = utf8.decode(datagram.data);
+          final ip = datagram.address.address;
+          if (resp.contains(&#39;MediaRenderer&#39;)) {
+            &#47;&#47; Parse device information
+            final nameMatch = RegExp(r&#39;\nSERVER: (.+)&#39;).firstMatch(resp);
+            final name = nameMatch?.group(1) ?? &#39;DLNA Renderer&#39;;
+            &#47;&#47; Parse LOCATION field
+            final locationMatch = RegExp(
+              r&#39;LOCATION:\s*(.+)\r?\n&#39;,
+              caseSensitive: false,
+            ).firstMatch(resp);
+            final location = locationMatch?.group(1)?.trim();
 
-          &#47;&#47; Parse model information (if available)
-          final modelMatch = RegExp(
-            r&#39;MODEL: (.+?)\r?\n&#39;,
-            caseSensitive: false,
-          ).firstMatch(resp);
-          final model = modelMatch?.group(1)?.trim();
+            &#47;&#47; Parse model information (if available)
+            final modelMatch = RegExp(
+              r&#39;MODEL: (.+?)\r?\n&#39;,
+              caseSensitive: false,
+            ).firstMatch(resp);
+            final model = modelMatch?.group(1)?.trim();
 
-          String? avTransportControlUrl;
-          String? renderingControlUrl;
-          if (location != null) {
-            try {
-              final urls = await fetchControlUrls(location);
-              avTransportControlUrl = urls[0];
-              renderingControlUrl = urls[1];
-            } catch (e) {
-              await logger.error(
-                &#39;errors.parse_control_urls_failed&#39;,
-                tag: &#39;SSDP&#39;,
-                error: e,
-              );
+            String? avTransportControlUrl;
+            String? renderingControlUrl;
+            if (location != null) {
+              try {
+                final urls = await fetchControlUrls(location);
+                avTransportControlUrl = urls[0];
+                renderingControlUrl = urls[1];
+              } catch (e) {
+                await logger.error(
+                  &#39;errors.parse_control_urls_failed&#39;,
+                  tag: &#39;SSDP&#39;,
+                  error: e,
+                );
+              }
             }
-          }
-          if (!responses.containsKey(ip)) {
-            final device = DiscoveredDevice.fromDlnaRenderer(
-              name: name,
-              ip: ip,
-              location: location ?? &#39;&#39;,
-              avTransportControlUrl: avTransportControlUrl,
-              renderingControlUrl: renderingControlUrl,
-              model: model,
-            );
-            await logger.info(
-              &#39;info.found_dlna_renderer&#39;,
-              tag: &#39;SSDP&#39;,
-              params: {
-                &#39;name&#39;: device.name,
-                &#39;ip&#39;: device.ip,
-                &#39;model&#39;: device.model ?? &#39;unknown&#39;,
-                &#39;location&#39;: device.location,
-              },
-            );
-            responses[ip] = device;
-            if (onDeviceFound != null) {
-              onDeviceFound(device);
+            if (!responses.containsKey(ip)) {
+              final device = DiscoveredDevice.fromDlnaRenderer(
+                name: name,
+                ip: ip,
+                location: location ?? &#39;&#39;,
+                avTransportControlUrl: avTransportControlUrl,
+                renderingControlUrl: renderingControlUrl,
+                model: model,
+              );
+
+              await logger.info(
+                &#39;info.found_dlna_renderer&#39;,
+                tag: &#39;SSDP&#39;,
+                params: {
+                  &#39;name&#39;: device.name,
+                  &#39;ip&#39;: device.ip,
+                  &#39;model&#39;: device.model ?? &#39;unknown&#39;,
+                  &#39;location&#39;: device.location,
+                },
+              );
+
+              responses[ip] = device;
+              if (onDeviceFound != null) {
+                onDeviceFound(device);
+              }
             }
           }
         }
       }
-    }
-  });
+    },
+    onDone: () {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    },
+    onError: (e) {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    },
+  );
   &#47;&#47; Wait for timeout to complete
   Future.delayed(timeout, () {
     socket.close();
-    completer.complete();
+    if (!completer.isCompleted) {
+      completer.complete();
+    }
   });
-  await completer.future;
+  try {
+    await completer.future;
+  } catch (e) {
+    rethrow;
+  }
   devices.addAll(responses.values);
+
   await logger.info(
     &#39;info.dlna_renderer_scan_complete&#39;,
     tag: &#39;SSDP&#39;,
     params: {&#39;count&#39;: devices.length},
   );
+
   return devices;
 }</code></pre>
 </section>
@@ -207,7 +231,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.1.0
+      1.1.1
   </span>
   
 </footer>

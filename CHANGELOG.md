@@ -1,3 +1,8 @@
+## 1.2.0
+
+- Fixed an issue where the logger could cause a "bad state: Future already completed" error in certain scenarios
+- Added usage examples and documentation for AirPlay RX and AirPlay TX device discovery
+
 ## 1.1.0
 
 - Added a comprehensive event notification system for real-time device discovery updates

@@ -78,24 +78,61 @@
 
   &#47;&#47; Process each device type
   json[&#39;chromecast&#39;] =
-      result[&#39;chromecast&#39;]!.map((device) =&gt; device.toJson()).toList();
+      (result[&#39;chromecast&#39;] ?? []).map((device) =&gt; device.toJson()).toList();
   json[&#39;chromecast_dongle&#39;] =
-      result[&#39;chromecast_dongle&#39;]!.map((device) =&gt; device.toJson()).toList();
+      (result[&#39;chromecast_dongle&#39;] ?? [])
+          .map((device) =&gt; device.toJson())
+          .toList();
   json[&#39;chromecast_audio&#39;] =
-      result[&#39;chromecast_audio&#39;]!.map((device) =&gt; device.toJson()).toList();
-  json[&#39;dlna&#39;] = result[&#39;dlna&#39;]!.map((device) =&gt; device.toJson()).toList();
+      (result[&#39;chromecast_audio&#39;] ?? [])
+          .map((device) =&gt; device.toJson())
+          .toList();
+  json[&#39;dlna&#39;] =
+      (result[&#39;dlna&#39;] ?? []).map((device) =&gt; device.toJson()).toList();
   json[&#39;dlna_renderer&#39;] =
-      result[&#39;dlna_renderer&#39;]!.map((device) =&gt; device.toJson()).toList();
+      (result[&#39;dlna_renderer&#39;] ?? [])
+          .map((device) =&gt; device.toJson())
+          .toList();
   json[&#39;dlna_media_server&#39;] =
-      result[&#39;dlna_media_server&#39;]!.map((device) =&gt; device.toJson()).toList();
+      (result[&#39;dlna_media_server&#39;] ?? [])
+          .map((device) =&gt; device.toJson())
+          .toList();
+  json[&#39;airplay&#39;] =
+      (result[&#39;airplay&#39;] ?? []).map((device) =&gt; device.toJson()).toList();
+  json[&#39;airplay_tx&#39;] =
+      (result[&#39;airplay_tx&#39;] ?? []).map((device) =&gt; device.toJson()).toList();
+  json[&#39;airplay_rx&#39;] =
+      (result[&#39;airplay_rx&#39;] ?? []).map((device) =&gt; device.toJson()).toList();
+  &#47;&#47; 不再輸出 airplay_device
+
+  &#47;&#47; 計算 RX&#47;TX 數量
+  final rxSet = &lt;String&gt;{};
+  for (final device in result[&#39;airplay_rx&#39;] ?? []) {
+    rxSet.add(device.ip + (device.id ?? &#39;&#39;) + (device.name));
+  }
+  for (final device in result[&#39;chromecast&#39;] ?? []) {
+    rxSet.add(device.ip + (device.id ?? &#39;&#39;) + (device.name));
+  }
+  for (final device in result[&#39;dlna_renderer&#39;] ?? []) {
+    rxSet.add(device.ip + (device.id ?? &#39;&#39;) + (device.name));
+  }
+  &#47;&#47; TX: DLNA Media Server + AirPlay TX
+  final txSet = &lt;String&gt;{};
+  for (final device in result[&#39;dlna_media_server&#39;] ?? []) {
+    txSet.add(device.ip + (device.id ?? &#39;&#39;) + (device.name));
+  }
+  for (final device in result[&#39;airplay_tx&#39;] ?? []) {
+    txSet.add(device.ip + (device.id ?? &#39;&#39;) + (device.name));
+  }
+  &#47;&#47; total: RX + TX（去重複）
+  final totalSet = &lt;String&gt;{};
+  totalSet.addAll(rxSet);
+  totalSet.addAll(txSet);
 
   json[&#39;count&#39;] = {
-    &#39;tx&#39;: result[&#39;dlna_media_server&#39;]!.length,
-    &#39;rx&#39;: result[&#39;chromecast&#39;]!.length + result[&#39;dlna_renderer&#39;]!.length,
-    &#39;total&#39;:
-        result[&#39;chromecast&#39;]!.length +
-        result[&#39;dlna_renderer&#39;]!.length +
-        result[&#39;dlna_media_server&#39;]!.length,
+    &#39;tx&#39;: txSet.length,
+    &#39;rx&#39;: rxSet.length,
+    &#39;total&#39;: totalSet.length,
   };
 
   &#47;&#47; Process errors
@@ -132,7 +169,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.1.0
+      1.1.1
   </span>
   
 </footer>

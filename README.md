@@ -26,7 +26,7 @@ Or manually add it to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  chromecast_dlna_finder: ^1.0.0
+  chromecast_dlna_finder: ^1.2.0
 ```
 
 ## Architecture Overview
@@ -127,12 +127,23 @@ Future<void> main() async {
   // Output all discovered devices
   print('Discovered Chromecast devices:');
   for (final device in devices['chromecast'] ?? []) {
-    print('- ${device.name} (${device.ip})');
+    print('- [32m${device.name}[0m (${device.ip})');
   }
 
   print('Discovered DLNA devices:');
   for (final device in devices['dlna'] ?? []) {
-    print('- ${device.name} (${device.ip})');
+    print('- [34m${device.name}[0m (${device.ip})');
+  }
+
+  // New: AirPlay RX and TX output
+  print('Discovered AirPlay RX devices:');
+  for (final device in devices['airplay_rx'] ?? []) {
+    print('- [35m${device.name}[0m (${device.ip})');
+  }
+
+  print('Discovered AirPlay TX devices:');
+  for (final device in devices['airplay_tx'] ?? []) {
+    print('- [36m${device.name}[0m (${device.ip})');
   }
 
   // Release resources
@@ -155,7 +166,9 @@ Scan results are output in JSON format with the following structure:
   "chromecast_audio": [],
   "dlna": [],
   "dlna_renderer": [],
-  "dlna_media_server": []
+  "dlna_media_server": [],
+  "airplay_rx": [],
+  "airplay_tx": []
 }
 ```
 

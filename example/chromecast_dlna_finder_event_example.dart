@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:chromecast_dlna_finder/chromecast_dlna_finder.dart';
-import 'package:chromecast_dlna_finder/src/discovery/discovery_events.dart';
 import 'package:chromecast_dlna_finder/src/util/logger.dart'; // Add this line to import AppLogLevel
 
 // ANSI color codes (for colorized terminal output)

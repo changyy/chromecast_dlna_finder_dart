@@ -86,8 +86,6 @@
   MDnsClient? client;
 
   try {
-    &#47;&#47; Try standard mDNS port, explicitly set reuseAddress=true and reusePort=true
-    &#47;&#47; This allows binding even if other processes are already listening
     client = MDnsClient(
       rawDatagramSocketFactory: (
         dynamic host,
@@ -96,13 +94,7 @@
         bool? reusePort,
         int? ttl,
       }) {
-        return RawDatagramSocket.bind(
-          host,
-          port,
-          reuseAddress: true,
-          reusePort: true,
-          ttl: ttl ?? 1,
-        );
+        return _safeBind(host, port, ttl: ttl);
       },
     );
     await client.start();
@@ -212,7 +204,13 @@
   } catch (e) {
     await logger.error(&#39;errors.chromecast_scan_failed&#39;, tag: &#39;mDNS&#39;, error: e);
   } finally {
-    client.stop();
+    bool clientStopped = false;
+    if (!clientStopped) {
+      try {
+        client.stop();
+      } catch (_) {}
+      clientStopped = true;
+    }
   }
 
   &#47;&#47; 從映射表中取出不重複的裝置
@@ -251,7 +249,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.1.0
+      1.1.1
   </span>
   
 </footer>

@@ -24,8 +24,6 @@ Future<List<DiscoveredDevice>> scanChromecastDevices({
   MDnsClient? client;
 
   try {
-    // Try standard mDNS port, explicitly set reuseAddress=true and reusePort=true
-    // This allows binding even if other processes are already listening
     client = MDnsClient(
       rawDatagramSocketFactory: (
         dynamic host,
@@ -34,13 +32,7 @@ Future<List<DiscoveredDevice>> scanChromecastDevices({
         bool? reusePort,
         int? ttl,
       }) {
-        return RawDatagramSocket.bind(
-          host,
-          port,
-          reuseAddress: true,
-          reusePort: true,
-          ttl: ttl ?? 1,
-        );
+        return _safeBind(host, port, ttl: ttl);
       },
     );
     await client.start();
@@ -150,7 +142,13 @@ Future<List<DiscoveredDevice>> scanChromecastDevices({
   } catch (e) {
     await logger.error('errors.chromecast_scan_failed', tag: 'mDNS', error: e);
   } finally {
-    client.stop();
+    bool clientStopped = false;
+    if (!clientStopped) {
+      try {
+        client.stop();
+      } catch (_) {}
+      clientStopped = true;
+    }
   }
 
   // 從映射表中取出不重複的裝置
@@ -162,6 +160,285 @@ Future<List<DiscoveredDevice>> scanChromecastDevices({
     params: {'count': devices.length},
   );
   return devices;
+}
+
+/// Scan for AirPlay RX (接收端, 如 Apple TV, 支援 AirPlay RX 的 Mac/iOS)
+Future<List<DiscoveredDevice>> scanAirplayRxDevices({
+  Function(DiscoveredDevice)? onDeviceFound,
+}) async {
+  final logger = AppLogger();
+  await logger.info('info.start_airplay_rx_scan', tag: 'mDNS');
+  final List<DiscoveredDevice> devices = [];
+  final deviceMap = <String, DiscoveredDevice>{};
+  MDnsClient? client;
+
+  try {
+    client = MDnsClient(
+      rawDatagramSocketFactory: (
+        dynamic host,
+        int port, {
+        bool? reuseAddress,
+        bool? reusePort,
+        int? ttl,
+      }) {
+        return _safeBind(host, port, ttl: ttl);
+      },
+    );
+    await client.start();
+    await logger.info('info.standard_mdns_port', tag: 'mDNS');
+  } on SocketException catch (e) {
+    if (e.osError?.errorCode == 48 || e.osError?.errorCode == 10048) {
+      await logger.error(
+        'errors.port_in_use',
+        tag: 'mDNS',
+        params: {'port': e.port},
+      );
+      throw MdnsPortInUseException(
+        'mDNS port ${e.port} is in use, cannot scan for AirPlay RX devices',
+      );
+    }
+    rethrow;
+  } catch (e) {
+    await logger.error('errors.mdns_init_error', tag: 'mDNS', error: e);
+    rethrow;
+  }
+
+  try {
+    // dns-sd -B _airplay._tcp local
+    await for (final PtrResourceRecord ptr in client.lookup<PtrResourceRecord>(
+      ResourceRecordQuery.serverPointer('_airplay._tcp.local'),
+    )) {
+      final serviceName = ptr.domainName;
+      await for (final SrvResourceRecord srv in client
+          .lookup<SrvResourceRecord>(
+            ResourceRecordQuery.service(serviceName),
+          )) {
+        await logger.debug(
+          'debug.found_airplay_service',
+          tag: 'mDNS',
+          params: {
+            'target': srv.target,
+            'port': srv.port,
+            'priority': srv.priority,
+            'weight': srv.weight,
+          },
+        );
+        await for (final IPAddressResourceRecord ip in client
+            .lookup<IPAddressResourceRecord>(
+              ResourceRecordQuery.addressIPv4(srv.target),
+            )) {
+          await for (final TxtResourceRecord txt in client
+              .lookup<TxtResourceRecord>(
+                ResourceRecordQuery.text(serviceName),
+              )) {
+            final txtMap = <String, String>{};
+            final dynamic txtRaw = txt.text;
+            await _parseTxtRecord(txtRaw, txtMap, logger);
+
+            final device = DiscoveredDevice.fromAirplay(
+              ip: ip.address.address,
+              port: srv.port,
+              serviceName: serviceName,
+              txtMap: txtMap,
+              mdnsTypes: ['_airplay._tcp'],
+            );
+
+            final deviceId = device.id ?? '${device.ip}_${device.name}';
+            if (deviceMap.containsKey(deviceId)) {
+              await logger.debug(
+                'debug.duplicate_airplay_device',
+                tag: 'mDNS',
+                params: {'id': deviceId, 'name': device.name, 'ip': device.ip},
+              );
+              continue;
+            }
+            deviceMap[deviceId] = device;
+
+            await logger.info(
+              'info.found_airplay_device',
+              tag: 'mDNS',
+              params: {
+                'deviceType': 'AirPlay RX',
+                'name': device.name,
+                'ip': device.ip,
+                'model': device.model,
+              },
+            );
+            if (onDeviceFound != null) {
+              onDeviceFound(device);
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    await logger.error('errors.airplay_rx_scan_failed', tag: 'mDNS', error: e);
+  } finally {
+    bool clientStopped = false;
+    if (!clientStopped) {
+      try {
+        client.stop();
+      } catch (_) {}
+      clientStopped = true;
+    }
+  }
+  devices.addAll(deviceMap.values);
+  await logger.info(
+    'info.airplay_rx_scan_complete',
+    tag: 'mDNS',
+    params: {'count': devices.length},
+  );
+  return devices;
+}
+
+/// Scan for AirPlay TX (發射端, 如 iPhone/iPad/Mac)
+Future<List<DiscoveredDevice>> scanAirplayTxDevices({
+  Function(DiscoveredDevice)? onDeviceFound,
+}) async {
+  final logger = AppLogger();
+  await logger.info('info.start_airplay_tx_scan', tag: 'mDNS');
+  final List<DiscoveredDevice> devices = [];
+  final deviceMap = <String, DiscoveredDevice>{};
+  MDnsClient? client;
+
+  try {
+    client = MDnsClient(
+      rawDatagramSocketFactory: (
+        dynamic host,
+        int port, {
+        bool? reuseAddress,
+        bool? reusePort,
+        int? ttl,
+      }) {
+        return _safeBind(host, port, ttl: ttl);
+      },
+    );
+    await client.start();
+    await logger.info('info.standard_mdns_port', tag: 'mDNS');
+  } on SocketException catch (e) {
+    if (e.osError?.errorCode == 48 || e.osError?.errorCode == 10048) {
+      await logger.error(
+        'errors.port_in_use',
+        tag: 'mDNS',
+        params: {'port': e.port},
+      );
+      throw MdnsPortInUseException(
+        'mDNS port ${e.port} is in use, cannot scan for AirPlay TX devices',
+      );
+    }
+    rethrow;
+  } catch (e) {
+    await logger.error('errors.mdns_init_error', tag: 'mDNS', error: e);
+    rethrow;
+  }
+
+  try {
+    // dns-sd -B _raop._tcp local
+    await for (final PtrResourceRecord ptr in client.lookup<PtrResourceRecord>(
+      ResourceRecordQuery.serverPointer('_raop._tcp.local'),
+    )) {
+      final serviceName = ptr.domainName;
+      await for (final SrvResourceRecord srv in client
+          .lookup<SrvResourceRecord>(
+            ResourceRecordQuery.service(serviceName),
+          )) {
+        await logger.debug(
+          'debug.found_raop_service',
+          tag: 'mDNS',
+          params: {
+            'target': srv.target,
+            'port': srv.port,
+            'priority': srv.priority,
+            'weight': srv.weight,
+          },
+        );
+        await for (final IPAddressResourceRecord ip in client
+            .lookup<IPAddressResourceRecord>(
+              ResourceRecordQuery.addressIPv4(srv.target),
+            )) {
+          await for (final TxtResourceRecord txt in client
+              .lookup<TxtResourceRecord>(
+                ResourceRecordQuery.text(serviceName),
+              )) {
+            final txtMap = <String, String>{};
+            final dynamic txtRaw = txt.text;
+            await _parseTxtRecord(txtRaw, txtMap, logger);
+
+            final device = DiscoveredDevice.fromAirplay(
+              ip: ip.address.address,
+              port: srv.port,
+              serviceName: serviceName,
+              txtMap: txtMap,
+              mdnsTypes: ['_raop._tcp'],
+            );
+
+            final deviceId = device.id ?? '${device.ip}_${device.name}';
+            if (deviceMap.containsKey(deviceId)) {
+              await logger.debug(
+                'debug.duplicate_airplay_tx_device',
+                tag: 'mDNS',
+                params: {'id': deviceId, 'name': device.name, 'ip': device.ip},
+              );
+              continue;
+            }
+            deviceMap[deviceId] = device;
+
+            await logger.info(
+              'info.found_airplay_tx_device',
+              tag: 'mDNS',
+              params: {
+                'deviceType': 'AirPlay TX',
+                'name': device.name,
+                'ip': device.ip,
+                'model': device.model,
+              },
+            );
+            if (onDeviceFound != null) {
+              onDeviceFound(device);
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    await logger.error('errors.airplay_tx_scan_failed', tag: 'mDNS', error: e);
+  } finally {
+    bool clientStopped = false;
+    if (!clientStopped) {
+      try {
+        client.stop();
+      } catch (_) {}
+      clientStopped = true;
+    }
+  }
+  devices.addAll(deviceMap.values);
+  await logger.info(
+    'info.airplay_tx_scan_complete',
+    tag: 'mDNS',
+    params: {'count': devices.length},
+  );
+  return devices;
+}
+
+/// 安全嘗試 bind，優先用 reusePort=true，失敗再 fallback
+Future<RawDatagramSocket> _safeBind(dynamic host, int port, {int? ttl}) async {
+  try {
+    return await RawDatagramSocket.bind(
+      host,
+      port,
+      reuseAddress: true,
+      reusePort: true,
+      ttl: ttl ?? 1,
+    );
+  } catch (_) {
+    // fallback: 不支援 reusePort
+    return await RawDatagramSocket.bind(
+      host,
+      port,
+      reuseAddress: true,
+      ttl: ttl ?? 1,
+    );
+  }
 }
 
 /// Parse TXT record, fill results into txtMap

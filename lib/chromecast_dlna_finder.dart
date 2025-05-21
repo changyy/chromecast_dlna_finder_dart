@@ -1,6 +1,11 @@
 export 'src/chromecast_dlna_finder_base.dart';
 export 'src/discovery/device.dart';
 export 'src/discovery/discovery_service.dart';
+export 'src/discovery/discovery_events.dart';
 export 'src/discovery/mdns_scanner.dart';
 export 'src/discovery/ssdp_scanner.dart';
 export 'src/discovery/cached_device.dart';
+export 'src/util/dlna_device_utils.dart';
+export 'src/util/dlna_soap_util.dart';
+export 'src/util/platform_info.dart';
+export 'src/util/platform_info_stub.dart';

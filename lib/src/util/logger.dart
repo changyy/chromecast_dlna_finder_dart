@@ -120,6 +120,9 @@ class AppLogger {
   // 廣播型 LogSink
   BroadcastSink? _broadcastSink;
 
+  // 初始化用的 Future
+  Future<void>? _initFuture;
+
   AppLogger._internal() {
     // 根據平台設置標識
     try {
@@ -131,17 +134,18 @@ class AppLogger {
   }
 
   /// 初始化日誌系統
-  Future<void> init() async {
+  Future<void> init() {
+    if (_initFuture != null) return _initFuture!;
+    _initFuture = _doInit();
+    return _initFuture!;
+  }
+
+  Future<void> _doInit() async {
     if (_initialized) {
-      // 如果已初始化，先釋放資源
       await dispose();
     }
-
-    // 初始化本地化管理器
     await _localization.init();
-
     List<LogSink> sinks = [];
-
     if (_outputs.contains(LoggerOutput.stderr)) {
       sinks.add(StderrSink());
     }
@@ -152,7 +156,6 @@ class AppLogger {
       _broadcastSink ??= BroadcastSink();
       sinks.add(_broadcastSink!);
     }
-
     LogLevel minLogcraftLevel;
     switch (_minLevel) {
       case AppLogLevel.debug:
@@ -168,7 +171,6 @@ class AppLogger {
         minLogcraftLevel = LogLevel.error;
         break;
     }
-
     await Logger.init(
       LoggerConfig(
         sinks: sinks,
@@ -176,7 +178,6 @@ class AppLogger {
         environment: Environment.development,
       ),
     );
-
     _initialized = true;
   }
 

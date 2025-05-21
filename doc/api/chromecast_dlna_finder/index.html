@@ -83,6 +83,22 @@
   Main class for Chromecast and DLNA device discovery
 </dd>
 
+          <dt id="DeviceDiscoveryEvent">
+  <span class="name "><a href="../chromecast_dlna_finder/DeviceDiscoveryEvent-class.html">DeviceDiscoveryEvent</a></span> 
+
+</dt>
+<dd>
+  裝置發現事件的基礎類別
+</dd>
+
+          <dt id="DeviceFoundEvent">
+  <span class="name "><a href="../chromecast_dlna_finder/DeviceFoundEvent-class.html">DeviceFoundEvent</a></span> 
+
+</dt>
+<dd>
+  找到裝置的事件
+</dd>
+
           <dt id="DiscoveredDevice">
   <span class="name "><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span> 
 
@@ -97,6 +113,46 @@
 </dt>
 <dd>
   Device discovery service
+</dd>
+
+          <dt id="DlnaSoapUtil">
+  <span class="name "><a href="../chromecast_dlna_finder/DlnaSoapUtil-class.html">DlnaSoapUtil</a></span> 
+
+</dt>
+<dd>
+  DLNA/UPnP SOAP 輔助工具
+</dd>
+
+          <dt id="PlatformInfo">
+  <span class="name "><a href="../chromecast_dlna_finder/PlatformInfo-class.html">PlatformInfo</a></span> 
+
+</dt>
+<dd>
+  
+</dd>
+
+          <dt id="SearchCompleteEvent">
+  <span class="name "><a href="../chromecast_dlna_finder/SearchCompleteEvent-class.html">SearchCompleteEvent</a></span> 
+
+</dt>
+<dd>
+  搜尋完成事件
+</dd>
+
+          <dt id="SearchErrorEvent">
+  <span class="name "><a href="../chromecast_dlna_finder/SearchErrorEvent-class.html">SearchErrorEvent</a></span> 
+
+</dt>
+<dd>
+  搜尋錯誤事件
+</dd>
+
+          <dt id="SearchStartedEvent">
+  <span class="name "><a href="../chromecast_dlna_finder/SearchStartedEvent-class.html">SearchStartedEvent</a></span> 
+
+</dt>
+<dd>
+  搜尋開始事件
 </dd>
 
       </dl>
@@ -124,6 +180,71 @@
     <section class="summary offset-anchor" id="functions">
       <h2>Functions</h2>
       <dl class="callables">
+          <dt id="fetchAvTransportControlUrl" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/fetchAvTransportControlUrl.html">fetchAvTransportControlUrl</a></span><span class="signature">(<wbr><span class="parameter" id="fetchAvTransportControlUrl-param-descriptionUrl"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">descriptionUrl</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  解析 DLNA description.xml，取得 AVTransport controlURL
+  
+
+</dd>
+
+          <dt id="fetchControlUrls" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/fetchControlUrls.html">fetchControlUrls</a></span><span class="signature">(<wbr><span class="parameter" id="fetchControlUrls-param-descriptionUrl"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">descriptionUrl</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  
+  
+
+</dd>
+
+          <dt id="fetchRenderingControlUrl" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/fetchRenderingControlUrl.html">fetchRenderingControlUrl</a></span><span class="signature">(<wbr><span class="parameter" id="fetchRenderingControlUrl-param-descriptionUrl"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">descriptionUrl</span></span>)
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  解析 DLNA description.xml，取得 RenderingControl controlURL
+  
+
+</dd>
+
+          <dt id="scanAirplayRxDevices" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/scanAirplayRxDevices.html">scanAirplayRxDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAirplayRxDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Scan for AirPlay RX (接收端, 如 Apple TV, 支援 AirPlay RX 的 Mac/iOS)
+  
+
+</dd>
+
+          <dt id="scanAirplayTxDevices" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/scanAirplayTxDevices.html">scanAirplayTxDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAirplayTxDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  Scan for AirPlay TX (發射端, 如 iPhone/iPad/Mac)
+  
+
+</dd>
+
           <dt id="scanAllDlnaDevices" class="callable">
   <span class="name"><a href="../chromecast_dlna_finder/scanAllDlnaDevices.html">scanAllDlnaDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAllDlnaDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanAllDlnaDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
@@ -224,7 +345,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.1.0
+      1.1.1
   </span>
   
 </footer>
