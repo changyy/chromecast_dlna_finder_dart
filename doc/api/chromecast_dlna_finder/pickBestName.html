@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the pickBestName function from the chromecast_dlna_finder library, for the Dart programming language.">
+  <title>pickBestName function - chromecast_dlna_finder library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../static-assets/styles.css?v1">
+  <link rel="icon" href="../static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="../" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../index.html">chromecast_dlna_finder</a></li>
+    <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder.dart</a></li>
+    <li class="self-crumb">pickBestName function</li>
+  </ol>
+  <div class="self-name">pickBestName</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div
+      id="dartdoc-main-content"
+      class="main-content"
+      data-above-sidebar="chromecast_dlna_finder&#47;chromecast_dlna_finder-library-sidebar.html"
+      data-below-sidebar="">
+      <div>
+<h1><span class="kind-function">pickBestName</span> function 
+ 
+</h1></div>
+
+    <section class="multi-line-signature">
+        
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+<span class="name ">pickBestName</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="pickBestName-param-txtMap"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">txtMap</span>, </span></li>
+<li><span class="parameter" id="pickBestName-param-fallback"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">fallback</span>, </span></li>
+<li><span class="parameter" id="pickBestName-param-location"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">location</span>, </span></li>
+<li><span class="parameter" id="pickBestName-param-serviceName"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">serviceName</span>, </span></li>
+</ol>})
+
+        
+
+    </section>
+    
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">String pickBestName({
+  required Map&lt;String, String&gt; txtMap,
+  String? fallback,
+  String? location,
+  String? serviceName,
+}) {
+  &#47;&#47; 1. 先嘗試從 location pattern 取名
+  if (location != null) {
+    final raopIdx = location.indexOf(&#39;._raop._tcp.local&#39;);
+    final airplayIdx = location.indexOf(&#39;._airplay._tcp.local&#39;);
+    if (raopIdx &gt; 0 || airplayIdx &gt; 0) {
+      final endIdx = raopIdx &gt; 0 ? raopIdx : airplayIdx;
+      final atIdx = location.lastIndexOf(&#39;@&#39;, endIdx);
+      if (atIdx &gt;= 0 &amp;&amp; endIdx &gt; atIdx) {
+        final name = location.substring(atIdx + 1, endIdx);
+        if (name.trim().isNotEmpty) return name.trim();
+      } else if (endIdx &gt; 0) {
+        &#47;&#47; 沒有 @，直接取前綴
+        final name = location.substring(0, endIdx);
+        if (name.trim().isNotEmpty) return name.trim();
+      }
+    }
+  }
+  &#47;&#47; 2. 其他 TXT 欄位
+  final candidates = [
+    txtMap[&#39;fn&#39;],
+    txtMap[&#39;friendlyName&#39;],
+    txtMap[&#39;cn&#39;],
+    txtMap[&#39;am&#39;],
+    txtMap[&#39;model&#39;],
+    txtMap[&#39;md&#39;],
+  ];
+  for (final c in candidates) {
+    if (c != null &amp;&amp; c.trim().isNotEmpty &amp;&amp; !_isMeaninglessName(c)) {
+      return c.trim();
+    }
+  }
+  &#47;&#47; 3. fallback: 若 location 有 @，取 @ 後方
+  if (location != null) {
+    if (location.contains(&#39;@&#39;)) {
+      final idx = location.indexOf(&#39;@&#39;);
+      final afterAt = location.substring(idx + 1);
+      if (afterAt.trim().isNotEmpty) return afterAt.trim();
+    } else {
+      return location.trim();
+    }
+  }
+  &#47;&#47; 4. fallback: serviceName
+  if (serviceName != null &amp;&amp; serviceName.trim().isNotEmpty) {
+    return serviceName.trim();
+  }
+  &#47;&#47; 5. fallback: 傳入 fallback
+  return fallback ?? &#39;Unknown&#39;;
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li><a href="../index.html">chromecast_dlna_finder</a></li>
+    <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder</a></li>
+    <li class="self-crumb">pickBestName function</li>
+</ol>
+
+    <h5>chromecast_dlna_finder library</h5>
+    <div id="dartdoc-sidebar-left-content"></div>
+  </div><!--/.sidebar-offcanvas-left-->
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+</main>
+<footer>
+  <span class="no-break">
+    chromecast_dlna_finder
+      1.3.0
+  </span>
+  
+</footer>
+
+
+<script src="../static-assets/highlight.pack.js?v1"></script>
+<script src="../static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+

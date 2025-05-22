@@ -131,7 +131,7 @@ void main(List<String> arguments) async {
 
     // Start scanning
     final jsonString = await finder.findDevicesAsJsonString(
-      timeout: Duration(seconds: timeoutSeconds),
+      scanDuration: Duration(seconds: timeoutSeconds),
       pretty: pretty,
     );
 

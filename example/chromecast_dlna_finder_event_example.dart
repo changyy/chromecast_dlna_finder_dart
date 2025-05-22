@@ -115,7 +115,9 @@ Future<void> main() async {
     print(
       '${AnsiColor.yellow}Starting network device discovery, please wait...${AnsiColor.reset}\n',
     );
-    final devices = await finder.findDevices(timeout: Duration(seconds: 10));
+    final devices = await finder.findDevices(
+      scanDuration: Duration(seconds: 10),
+    );
 
     // Stop loading animation
     loadingTimer.cancel();

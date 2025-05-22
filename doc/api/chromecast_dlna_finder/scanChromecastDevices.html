@@ -25,24 +25,21 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">chromecast_dlna_finder</a></li>
-    <li><a href="../chromecast_dlna_finder">chromecast_dlna_finder.dart</a></li>
+    <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder.dart</a></li>
     <li class="self-crumb">scanChromecastDevices function</li>
   </ol>
   <div class="self-name">scanChromecastDevices</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
   <div
@@ -60,6 +57,7 @@
 <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
 <span class="name ">scanChromecastDevices</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="scanChromecastDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span></li>
 </ol>)?, </span></li>
+<li><span class="parameter" id="scanChromecastDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span>, </span></li>
 </ol>})
 
         
@@ -77,151 +75,29 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanChromecastDevices({
   Function(DiscoveredDevice)? onDeviceFound,
+  Duration scanDuration = const Duration(seconds: 5), &#47;&#47; 改名為 scanDuration
 }) async {
-  final logger = AppLogger();
-  await logger.info(&#39;info.start_chromecast_scan&#39;, tag: &#39;mDNS&#39;);
-  final List&lt;DiscoveredDevice&gt; devices = [];
-  &#47;&#47; 使用 Map 來追蹤已發現的裝置，避免重複
-  final deviceMap = &lt;String, DiscoveredDevice&gt;{};
-  MDnsClient? client;
-
-  try {
-    client = MDnsClient(
-      rawDatagramSocketFactory: (
-        dynamic host,
-        int port, {
-        bool? reuseAddress,
-        bool? reusePort,
-        int? ttl,
-      }) {
-        return _safeBind(host, port, ttl: ttl);
-      },
-    );
-    await client.start();
-    await logger.info(&#39;info.standard_mdns_port&#39;, tag: &#39;mDNS&#39;);
-  } on SocketException catch (e) {
-    if (e.osError?.errorCode == 48 || &#47;&#47; macOS&#47;Linux port in use
-        e.osError?.errorCode == 10048) {
-      &#47;&#47; Windows port in use
-      await logger.error(
-        &#39;errors.port_in_use&#39;,
-        tag: &#39;mDNS&#39;,
-        params: {&#39;port&#39;: e.port},
+  return scanMdnsDevices(
+    serviceType: &#39;_googlecast._tcp&#39;,
+    mdnsType: &#39;_googlecast._tcp&#39;,
+    deviceFactory: ({
+      required String ip,
+      required int port,
+      required String serviceName,
+      required Map&lt;String, String&gt; txtMap,
+      List&lt;String&gt;? mdnsTypes,
+    }) {
+      return DiscoveredDevice.fromChromecast(
+        ip: ip,
+        port: port,
+        serviceName: serviceName,
+        txtMap: txtMap,
       );
-      throw MdnsPortInUseException(
-        &#39;mDNS port ${e.port} is in use, cannot scan for Chromecast devices&#39;,
-      );
-    }
-    rethrow;
-  } catch (e) {
-    await logger.error(&#39;errors.mdns_init_error&#39;, tag: &#39;mDNS&#39;, error: e);
-    rethrow;
-  }
-
-  &#47;&#47; Continue normal scanning process
-  try {
-    &#47;&#47; dns-sd -B _googlecast._tcp local
-    await for (final PtrResourceRecord ptr in client.lookup&lt;PtrResourceRecord&gt;(
-      ResourceRecordQuery.serverPointer(&#39;_googlecast._tcp.local&#39;),
-    )) {
-      final serviceName =
-          ptr.domainName; &#47;&#47; e.g. Chromecast-XXXXXX._googlecast._tcp.local
-      await for (final SrvResourceRecord srv in client
-          .lookup&lt;SrvResourceRecord&gt;(
-            ResourceRecordQuery.service(serviceName),
-          )) {
-        await logger.debug(
-          &#39;debug.found_service&#39;,
-          tag: &#39;mDNS&#39;,
-          params: {
-            &#39;target&#39;: srv.target,
-            &#39;port&#39;: srv.port,
-            &#39;priority&#39;: srv.priority,
-            &#39;weight&#39;: srv.weight,
-          },
-        );
-        await for (final IPAddressResourceRecord ip in client
-            .lookup&lt;IPAddressResourceRecord&gt;(
-              ResourceRecordQuery.addressIPv4(srv.target),
-            )) {
-          &#47;&#47; Query TXT record
-          await for (final TxtResourceRecord txt in client
-              .lookup&lt;TxtResourceRecord&gt;(
-                ResourceRecordQuery.text(serviceName),
-              )) {
-            final txtMap = &lt;String, String&gt;{};
-            final dynamic txtRaw = txt.text;
-
-            &#47;&#47; Safely parse TXT record
-            await _parseTxtRecord(txtRaw, txtMap, logger);
-
-            &#47;&#47; Use factory method to create device object, automatically determine Chromecast type
-            final device = DiscoveredDevice.fromChromecast(
-              ip: ip.address.address,
-              port: srv.port,
-              serviceName: serviceName,
-              txtMap: txtMap,
-            );
-
-            &#47;&#47; 取得裝置 ID，若不存在則使用 IP 與名稱組合
-            final deviceId = device.id ?? &#39;${device.ip}_${device.name}&#39;;
-
-            &#47;&#47; 檢查是否已經有相同裝置
-            if (deviceMap.containsKey(deviceId)) {
-              await logger.debug(
-                &#39;debug.duplicate_device&#39;,
-                tag: &#39;mDNS&#39;,
-                params: {&#39;id&#39;: deviceId, &#39;name&#39;: device.name, &#39;ip&#39;: device.ip},
-              );
-              continue; &#47;&#47; 跳過重複裝置
-            }
-
-            &#47;&#47; 加入到裝置映射表
-            deviceMap[deviceId] = device;
-
-            &#47;&#47; Display different messages based on device type
-            final deviceType =
-                device.isChromecastAudio ? &#39;Chromecast Audio&#39; : &#39;Chromecast&#39;;
-            await logger.info(
-              &#39;info.found_device&#39;,
-              tag: &#39;mDNS&#39;,
-              params: {
-                &#39;deviceType&#39;: deviceType,
-                &#39;name&#39;: device.name,
-                &#39;ip&#39;: device.ip,
-                &#39;model&#39;: device.model,
-              },
-            );
-
-            &#47;&#47; 調用回調函數
-            if (onDeviceFound != null) {
-              onDeviceFound(device);
-            }
-          }
-        }
-      }
-    }
-  } catch (e) {
-    await logger.error(&#39;errors.chromecast_scan_failed&#39;, tag: &#39;mDNS&#39;, error: e);
-  } finally {
-    bool clientStopped = false;
-    if (!clientStopped) {
-      try {
-        client.stop();
-      } catch (_) {}
-      clientStopped = true;
-    }
-  }
-
-  &#47;&#47; 從映射表中取出不重複的裝置
-  devices.addAll(deviceMap.values);
-
-  await logger.info(
-    &#39;info.chromecast_scan_complete&#39;,
-    tag: &#39;mDNS&#39;,
-    params: {&#39;count&#39;: devices.length},
+    },
+    onDeviceFound: onDeviceFound,
+    logTag: &#39;mDNS&#39;,
+    scanDuration: scanDuration, &#47;&#47; 傳遞 scanDuration
   );
-  return devices;
 }</code></pre>
 </section>
 
@@ -236,7 +112,7 @@
 </header>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">chromecast_dlna_finder</a></li>
-    <li><a href="../chromecast_dlna_finder">chromecast_dlna_finder</a></li>
+    <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder</a></li>
     <li class="self-crumb">scanChromecastDevices function</li>
 </ol>
 
@@ -249,7 +125,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.1.1
+      1.3.0
   </span>
   
 </footer>

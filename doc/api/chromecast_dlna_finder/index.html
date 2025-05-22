@@ -31,17 +31,14 @@
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
 <div
@@ -219,8 +216,21 @@
 
 </dd>
 
+          <dt id="pickBestName" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/pickBestName.html">pickBestName</a></span><span class="signature">(<wbr>{<span class="parameter" id="pickBestName-param-txtMap"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">txtMap</span>, </span><span class="parameter" id="pickBestName-param-fallback"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">fallback</span>, </span><span class="parameter" id="pickBestName-param-location"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">location</span>, </span><span class="parameter" id="pickBestName-param-serviceName"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">serviceName</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>
+  </span>
+  
+
+</dt>
+<dd>
+  
+  
+
+</dd>
+
           <dt id="scanAirplayRxDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/scanAirplayRxDevices.html">scanAirplayRxDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAirplayRxDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
+  <span class="name"><a href="../chromecast_dlna_finder/scanAirplayRxDevices.html">scanAirplayRxDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAirplayRxDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?, </span><span class="parameter" id="scanAirplayRxDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -233,7 +243,7 @@
 </dd>
 
           <dt id="scanAirplayTxDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/scanAirplayTxDevices.html">scanAirplayTxDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAirplayTxDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
+  <span class="name"><a href="../chromecast_dlna_finder/scanAirplayTxDevices.html">scanAirplayTxDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAirplayTxDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?, </span><span class="parameter" id="scanAirplayTxDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -246,7 +256,7 @@
 </dd>
 
           <dt id="scanAllDlnaDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/scanAllDlnaDevices.html">scanAllDlnaDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAllDlnaDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanAllDlnaDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
+  <span class="name"><a href="../chromecast_dlna_finder/scanAllDlnaDevices.html">scanAllDlnaDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanAllDlnaDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanAllDlnaDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -260,7 +270,7 @@
 </dd>
 
           <dt id="scanChromecastDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/scanChromecastDevices.html">scanChromecastDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanChromecastDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
+  <span class="name"><a href="../chromecast_dlna_finder/scanChromecastDevices.html">scanChromecastDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanChromecastDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?, </span><span class="parameter" id="scanChromecastDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -274,7 +284,7 @@
 </dd>
 
           <dt id="scanDlnaMediaServerDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/scanDlnaMediaServerDevices.html">scanDlnaMediaServerDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanDlnaMediaServerDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanDlnaMediaServerDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
+  <span class="name"><a href="../chromecast_dlna_finder/scanDlnaMediaServerDevices.html">scanDlnaMediaServerDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanDlnaMediaServerDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanDlnaMediaServerDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -288,7 +298,7 @@
 </dd>
 
           <dt id="scanDlnaRendererDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/scanDlnaRendererDevices.html">scanDlnaRendererDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanDlnaRendererDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanDlnaRendererDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
+  <span class="name"><a href="../chromecast_dlna_finder/scanDlnaRendererDevices.html">scanDlnaRendererDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanDlnaRendererDevices-param-sendQueryMessageInterval"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">sendQueryMessageInterval</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanDlnaRendererDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 15)</span>, </span><span class="parameter" id="scanDlnaRendererDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?</span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -297,6 +307,19 @@
 <dd>
   Scan for DLNA Renderer devices in the local network (using SSDP/UPnP)
 <code>onDeviceFound</code> 回調函數，當找到新裝置時調用
+  
+
+</dd>
+
+          <dt id="scanMdnsDevices" class="callable">
+  <span class="name"><a href="../chromecast_dlna_finder/scanMdnsDevices.html">scanMdnsDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="scanMdnsDevices-param-serviceType"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">serviceType</span>, </span><span class="parameter" id="scanMdnsDevices-param-mdnsType"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">mdnsType</span>, </span><span class="parameter" id="scanMdnsDevices-param-deviceFactory"><span>required</span> <span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span> <span class="parameter-name">deviceFactory</span>({<span class="parameter" id="param-ip"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">ip</span>, </span><span class="parameter" id="param-mdnsTypes"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span>?</span> <span class="parameter-name">mdnsTypes</span>, </span><span class="parameter" id="param-port"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/int-class.html">int</a></span> <span class="parameter-name">port</span>, </span><span class="parameter" id="param-serviceName"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">serviceName</span>, </span><span class="parameter" id="param-txtMap"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span> <span class="parameter-name">txtMap</span></span>}), </span><span class="parameter" id="scanMdnsDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span>)?, </span><span class="parameter" id="scanMdnsDevices-param-logTag"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a>?</span> <span class="parameter-name">logTag</span>, </span><span class="parameter" id="scanMdnsDevices-param-sendQueryMessageInterval"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">sendQueryMessageInterval</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span><span class="parameter" id="scanMdnsDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 15)</span>, </span><span class="parameter" id="scanMdnsDevices-param-useSystemMdns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">useSystemMdns</span> = <span class="default-value">false</span></span>})
+    <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
+  </span>
+  
+
+</dt>
+<dd>
+  共用 mDNS 掃描器
   
 
 </dd>
@@ -334,7 +357,7 @@
     <h5><span class="package-name">chromecast_dlna_finder</span> <span class="package-kind">package</span></h5>
     <ol>
       <li class="section-title">Libraries</li>
-      <li><a href="../chromecast_dlna_finder">chromecast_dlna_finder</a></li>
+      <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder</a></li>
 </ol>
 
   </div>
@@ -345,7 +368,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.1.1
+      1.3.0
   </span>
   
 </footer>

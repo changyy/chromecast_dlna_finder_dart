@@ -25,24 +25,21 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">chromecast_dlna_finder</a></li>
-    <li><a href="../chromecast_dlna_finder">chromecast_dlna_finder.dart</a></li>
+    <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder.dart</a></li>
     <li class="self-crumb">scanAllDlnaDevices function</li>
   </ol>
   <div class="self-name">scanAllDlnaDevices</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
   <div
@@ -58,7 +55,7 @@
     <section class="multi-line-signature">
         
 <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
-<span class="name ">scanAllDlnaDevices</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="scanAllDlnaDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span></li>
+<span class="name ">scanAllDlnaDevices</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="scanAllDlnaDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span></li>
 <li><span class="parameter" id="scanAllDlnaDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span></li>
 </ol>)?, </span></li>
 </ol>})
@@ -77,7 +74,7 @@
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanAllDlnaDevices({
-  Duration timeout = const Duration(seconds: 3),
+  Duration scanDuration = const Duration(seconds: 3),
   Function(DiscoveredDevice)? onDeviceFound,
 }) async {
   final logger = AppLogger();
@@ -85,8 +82,14 @@
 
   &#47;&#47; 使用 Future.wait 同時掃描兩種裝置
   final results = await Future.wait([
-    scanDlnaRendererDevices(timeout: timeout, onDeviceFound: onDeviceFound),
-    scanDlnaMediaServerDevices(timeout: timeout, onDeviceFound: onDeviceFound),
+    scanDlnaRendererDevices(
+      scanDuration: scanDuration,
+      onDeviceFound: onDeviceFound,
+    ),
+    scanDlnaMediaServerDevices(
+      scanDuration: scanDuration,
+      onDeviceFound: onDeviceFound,
+    ),
   ]);
 
   final renderers = results[0];
@@ -113,7 +116,7 @@
 </header>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">chromecast_dlna_finder</a></li>
-    <li><a href="../chromecast_dlna_finder">chromecast_dlna_finder</a></li>
+    <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder</a></li>
     <li class="self-crumb">scanAllDlnaDevices function</li>
 </ol>
 
@@ -126,7 +129,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.1.1
+      1.3.0
   </span>
   
 </footer>

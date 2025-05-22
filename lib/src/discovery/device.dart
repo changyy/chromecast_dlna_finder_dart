@@ -140,18 +140,88 @@ class DiscoveredDevice {
     required String serviceName,
     required Map<String, String> txtMap,
     List<String>? mdnsTypes, // 新增
+    String? location, // 可傳入 location
   }) {
+    final bestName = pickBestName(
+      txtMap: txtMap,
+      fallback: txtMap['fn'] ?? txtMap['cn'],
+      location: location ?? serviceName,
+      serviceName: serviceName,
+    );
     return DiscoveredDevice(
-      name: txtMap['fn'] ?? txtMap['cn'] ?? serviceName, // AirPlay 常見欄位 fn/cn
+      name: bestName,
       ip: ip,
       type: DeviceType.airplay,
       model: txtMap['md'],
-      location: serviceName,
+      location: location ?? serviceName,
       id: txtMap['id'],
-      friendlyName: txtMap['fn'] ?? txtMap['cn'],
+      friendlyName: bestName,
       port: port,
       extra: txtMap,
       mdnsTypes: mdnsTypes, // 新增
     );
   }
+}
+
+// --- Best name picking for AirPlay/Chromecast ---
+String pickBestName({
+  required Map<String, String> txtMap,
+  String? fallback,
+  String? location,
+  String? serviceName,
+}) {
+  // 1. 先嘗試從 location pattern 取名
+  if (location != null) {
+    final raopIdx = location.indexOf('._raop._tcp.local');
+    final airplayIdx = location.indexOf('._airplay._tcp.local');
+    if (raopIdx > 0 || airplayIdx > 0) {
+      final endIdx = raopIdx > 0 ? raopIdx : airplayIdx;
+      final atIdx = location.lastIndexOf('@', endIdx);
+      if (atIdx >= 0 && endIdx > atIdx) {
+        final name = location.substring(atIdx + 1, endIdx);
+        if (name.trim().isNotEmpty) return name.trim();
+      } else if (endIdx > 0) {
+        // 沒有 @，直接取前綴
+        final name = location.substring(0, endIdx);
+        if (name.trim().isNotEmpty) return name.trim();
+      }
+    }
+  }
+  // 2. 其他 TXT 欄位
+  final candidates = [
+    txtMap['fn'],
+    txtMap['friendlyName'],
+    txtMap['cn'],
+    txtMap['am'],
+    txtMap['model'],
+    txtMap['md'],
+  ];
+  for (final c in candidates) {
+    if (c != null && c.trim().isNotEmpty && !_isMeaninglessName(c)) {
+      return c.trim();
+    }
+  }
+  // 3. fallback: 若 location 有 @，取 @ 後方
+  if (location != null) {
+    if (location.contains('@')) {
+      final idx = location.indexOf('@');
+      final afterAt = location.substring(idx + 1);
+      if (afterAt.trim().isNotEmpty) return afterAt.trim();
+    } else {
+      return location.trim();
+    }
+  }
+  // 4. fallback: serviceName
+  if (serviceName != null && serviceName.trim().isNotEmpty) {
+    return serviceName.trim();
+  }
+  // 5. fallback: 傳入 fallback
+  return fallback ?? 'Unknown';
+}
+
+bool _isMeaninglessName(String name) {
+  final n = name.trim();
+  final regex = RegExp(r'^(\d+,?)+$');
+  if (regex.hasMatch(n)) return true;
+  return false;
 }

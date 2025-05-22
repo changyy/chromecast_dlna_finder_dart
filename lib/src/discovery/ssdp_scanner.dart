@@ -8,7 +8,8 @@ import '../util/logger.dart';
 /// Scan for DLNA Renderer devices in the local network (using SSDP/UPnP)
 /// [onDeviceFound] 回調函數，當找到新裝置時調用
 Future<List<DiscoveredDevice>> scanDlnaRendererDevices({
-  Duration timeout = const Duration(seconds: 3),
+  Duration sendQueryMessageInterval = const Duration(seconds: 3),
+  Duration scanDuration = const Duration(seconds: 15),
   Function(DiscoveredDevice)? onDeviceFound,
 }) async {
   final logger = AppLogger();
@@ -29,6 +30,11 @@ Future<List<DiscoveredDevice>> scanDlnaRendererDevices({
       'ST: urn:schemas-upnp-org:device:MediaRenderer:1\r\n'
       '\r\n';
   final data = utf8.encode(ssdpRequest);
+  // 定期發送 SSDP discovery message
+  final periodic = Timer.periodic(sendQueryMessageInterval, (_) {
+    socket.send(data, InternetAddress('239.255.255.250'), 1900);
+  });
+  // 啟動時立即發送一次
   socket.send(data, InternetAddress('239.255.255.250'), 1900);
 
   final responses = <String, DiscoveredDevice>{};
@@ -114,8 +120,9 @@ Future<List<DiscoveredDevice>> scanDlnaRendererDevices({
       }
     },
   );
-  // Wait for timeout to complete
-  Future.delayed(timeout, () {
+  // Wait for scanDuration to complete
+  Future.delayed(scanDuration, () {
+    periodic.cancel();
     socket.close();
     if (!completer.isCompleted) {
       completer.complete();
@@ -140,7 +147,7 @@ Future<List<DiscoveredDevice>> scanDlnaRendererDevices({
 /// Scan for DLNA Media Server devices in the local network (using SSDP/UPnP)
 /// [onDeviceFound] 回調函數，當找到新裝置時調用
 Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({
-  Duration timeout = const Duration(seconds: 3),
+  Duration scanDuration = const Duration(seconds: 3),
   Function(DiscoveredDevice)? onDeviceFound,
 }) async {
   final logger = AppLogger();
@@ -161,6 +168,12 @@ Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({
       'ST: urn:schemas-upnp-org:device:MediaServer:1\r\n'
       '\r\n';
   final data = utf8.encode(ssdpRequest);
+  // 定期發送 SSDP discovery message
+  final interval = Duration(seconds: 2);
+  final periodic = Timer.periodic(interval, (_) {
+    socket.send(data, InternetAddress('239.255.255.250'), 1900);
+  });
+  // 啟動時立即發送一次
   socket.send(data, InternetAddress('239.255.255.250'), 1900);
 
   final responses = <String, DiscoveredDevice>{};
@@ -227,8 +240,9 @@ Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({
       }
     },
   );
-  // Wait for timeout to complete
-  Future.delayed(timeout, () {
+  // Wait for scanDuration to complete
+  Future.delayed(scanDuration, () {
+    periodic.cancel();
     socket.close();
     if (!completer.isCompleted) {
       completer.complete();
@@ -247,7 +261,7 @@ Future<List<DiscoveredDevice>> scanDlnaMediaServerDevices({
 /// Scan for all DLNA devices (including Renderers and Media Servers)
 /// [onDeviceFound] 回調函數，當找到新裝置時調用
 Future<List<DiscoveredDevice>> scanAllDlnaDevices({
-  Duration timeout = const Duration(seconds: 3),
+  Duration scanDuration = const Duration(seconds: 3),
   Function(DiscoveredDevice)? onDeviceFound,
 }) async {
   final logger = AppLogger();
@@ -255,8 +269,14 @@ Future<List<DiscoveredDevice>> scanAllDlnaDevices({
 
   // 使用 Future.wait 同時掃描兩種裝置
   final results = await Future.wait([
-    scanDlnaRendererDevices(timeout: timeout, onDeviceFound: onDeviceFound),
-    scanDlnaMediaServerDevices(timeout: timeout, onDeviceFound: onDeviceFound),
+    scanDlnaRendererDevices(
+      scanDuration: scanDuration,
+      onDeviceFound: onDeviceFound,
+    ),
+    scanDlnaMediaServerDevices(
+      scanDuration: scanDuration,
+      onDeviceFound: onDeviceFound,
+    ),
   ]);
 
   final renderers = results[0];

@@ -1,3 +1,16 @@
+## 1.3.0
+
+- Enhanced output format: added `dlna_rx`, `dlna_tx`, `airplay_rx`, `airplay_tx`, and `count` fields to the JSON result for more granular device categorization.
+- Updated README.md:
+  - Output format and device information examples now reflect the new fields and structure.
+  - Added a command-line output example with sensitive information masked (***).
+- Improved example code:
+  - Example now prints AirPlay RX/TX results in addition to Chromecast and DLNA.
+  - Comments and output are now in English.
+- CLI/JSON output: sensitive information (such as device name, IP, ID) is masked with `***` in documentation and sample outputs to protect user privacy.
+- All API parameters previously named `timeout` have been renamed to `scanDuration` for clarity. Please update your code and CLI usage accordingly.
+- Minor documentation and code cleanups.
+
 ## 1.2.0
 
 - Fixed an issue where the logger could cause a "bad state: Future already completed" error in certain scenarios
@@ -39,4 +52,3 @@
 - README.md fully rewritten and enhanced to reflect new architecture, usage, and features.
 - Test suite updated to match new logger API and i18n logic.
 - Various bug fixes and code cleanups.
-

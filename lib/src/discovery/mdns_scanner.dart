@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:multicast_dns/multicast_dns.dart';
 import 'device.dart';
@@ -11,17 +12,43 @@ class MdnsPortInUseException implements Exception {
   String toString() => 'MdnsPortInUseException: $message';
 }
 
-/// Scan for Chromecast devices in the local network
-/// [onDeviceFound] 回調函數，當找到新裝置時調用
-Future<List<DiscoveredDevice>> scanChromecastDevices({
+/// 共用 mDNS 掃描器
+Future<List<DiscoveredDevice>> scanMdnsDevices({
+  required String
+  serviceType, // 例如 '_airplay._tcp', '_raop._tcp', '_googlecast._tcp'
+  required String
+  mdnsType, // 例如 '_airplay._tcp', '_raop._tcp', '_googlecast._tcp'
+  required DiscoveredDevice Function({
+    required String ip,
+    required int port,
+    required String serviceName,
+    required Map<String, String> txtMap,
+    List<String>? mdnsTypes,
+  })
+  deviceFactory,
   Function(DiscoveredDevice)? onDeviceFound,
+  String? logTag,
+  Duration sendQueryMessageInterval = const Duration(seconds: 3),
+  Duration scanDuration = const Duration(seconds: 15), // 改名為 scanDuration
+  bool useSystemMdns = false, // 新增參數，預設 false
 }) async {
   final logger = AppLogger();
-  await logger.info('info.start_chromecast_scan', tag: 'mDNS');
   final List<DiscoveredDevice> devices = [];
-  // 使用 Map 來追蹤已發現的裝置，避免重複
   final deviceMap = <String, DiscoveredDevice>{};
   MDnsClient? client;
+  logTag ??= 'mDNS';
+
+  // 平台判斷
+  bool isApplePlatform = false;
+  try {
+    isApplePlatform = Platform.isIOS || Platform.isMacOS;
+  } catch (_) {}
+
+  if (useSystemMdns && isApplePlatform) {
+    // TODO: 實作系統內建 mDNS 查詢
+    await logger.info('info.use_system_mdns', tag: logTag);
+    throw UnimplementedError('系統內建 mDNS 尚未實作，請自行擴充');
+  }
 
   try {
     client = MDnsClient(
@@ -36,41 +63,41 @@ Future<List<DiscoveredDevice>> scanChromecastDevices({
       },
     );
     await client.start();
-    await logger.info('info.standard_mdns_port', tag: 'mDNS');
+    await logger.info('info.standard_mdns_port', tag: logTag);
   } on SocketException catch (e) {
-    if (e.osError?.errorCode == 48 || // macOS/Linux port in use
-        e.osError?.errorCode == 10048) {
-      // Windows port in use
+    if (e.osError?.errorCode == 48 || e.osError?.errorCode == 10048) {
       await logger.error(
         'errors.port_in_use',
-        tag: 'mDNS',
+        tag: logTag,
         params: {'port': e.port},
       );
       throw MdnsPortInUseException(
-        'mDNS port ${e.port} is in use, cannot scan for Chromecast devices',
+        'mDNS port ￿e.port} is in use, cannot scan for $serviceType devices',
       );
     }
     rethrow;
   } catch (e) {
-    await logger.error('errors.mdns_init_error', tag: 'mDNS', error: e);
+    await logger.error('errors.mdns_init_error', tag: logTag, error: e);
     rethrow;
   }
 
-  // Continue normal scanning process
-  try {
-    // dns-sd -B _googlecast._tcp local
-    await for (final PtrResourceRecord ptr in client.lookup<PtrResourceRecord>(
-      ResourceRecordQuery.serverPointer('_googlecast._tcp.local'),
-    )) {
-      final serviceName =
-          ptr.domainName; // e.g. Chromecast-XXXXXX._googlecast._tcp.local
-      await for (final SrvResourceRecord srv in client
-          .lookup<SrvResourceRecord>(
-            ResourceRecordQuery.service(serviceName),
-          )) {
+  final completer = Completer<void>();
+  final List<StreamSubscription> subscriptions = [];
+  Timer? periodicQueryTimer;
+  bool isCompleted = false;
+
+  Future<void> sendPtrQuery() async {
+    final ptrStream = client!.lookup<PtrResourceRecord>(
+      ResourceRecordQuery.serverPointer('$serviceType.local'),
+    );
+    final ptrSubscription = ptrStream.listen((ptr) async {
+      final serviceName = ptr.domainName;
+      await for (final srv in client!.lookup<SrvResourceRecord>(
+        ResourceRecordQuery.service(serviceName),
+      )) {
         await logger.debug(
           'debug.found_service',
-          tag: 'mDNS',
+          tag: logTag,
           params: {
             'target': srv.target,
             'port': srv.port,
@@ -78,69 +105,90 @@ Future<List<DiscoveredDevice>> scanChromecastDevices({
             'weight': srv.weight,
           },
         );
-        await for (final IPAddressResourceRecord ip in client
-            .lookup<IPAddressResourceRecord>(
-              ResourceRecordQuery.addressIPv4(srv.target),
-            )) {
-          // Query TXT record
-          await for (final TxtResourceRecord txt in client
-              .lookup<TxtResourceRecord>(
-                ResourceRecordQuery.text(serviceName),
-              )) {
+        await for (final ip in client.lookup<IPAddressResourceRecord>(
+          ResourceRecordQuery.addressIPv4(srv.target),
+        )) {
+          await for (final txt in client.lookup<TxtResourceRecord>(
+            ResourceRecordQuery.text(serviceName),
+          )) {
             final txtMap = <String, String>{};
             final dynamic txtRaw = txt.text;
-
-            // Safely parse TXT record
             await _parseTxtRecord(txtRaw, txtMap, logger);
 
-            // Use factory method to create device object, automatically determine Chromecast type
-            final device = DiscoveredDevice.fromChromecast(
+            final device = deviceFactory(
               ip: ip.address.address,
               port: srv.port,
               serviceName: serviceName,
               txtMap: txtMap,
+              mdnsTypes: [mdnsType],
             );
-
-            // 取得裝置 ID，若不存在則使用 IP 與名稱組合
-            final deviceId = device.id ?? '${device.ip}_${device.name}';
-
-            // 檢查是否已經有相同裝置
+            final deviceId =
+                '${mdnsType}_${(device.id ?? device.location ?? "${device.ip}_${device.name}")}';
             if (deviceMap.containsKey(deviceId)) {
               await logger.debug(
                 'debug.duplicate_device',
-                tag: 'mDNS',
+                tag: logTag,
                 params: {'id': deviceId, 'name': device.name, 'ip': device.ip},
               );
-              continue; // 跳過重複裝置
+              continue;
             }
-
-            // 加入到裝置映射表
             deviceMap[deviceId] = device;
-
-            // Display different messages based on device type
-            final deviceType =
-                device.isChromecastAudio ? 'Chromecast Audio' : 'Chromecast';
             await logger.info(
               'info.found_device',
-              tag: 'mDNS',
+              tag: logTag,
               params: {
-                'deviceType': deviceType,
+                'deviceType': device.type.toString(),
                 'name': device.name,
                 'ip': device.ip,
                 'model': device.model,
               },
             );
-
-            // 調用回調函數
             if (onDeviceFound != null) {
               onDeviceFound(device);
             }
           }
         }
       }
+    });
+    subscriptions.add(ptrSubscription);
+  }
+
+  try {
+    // 首次查詢
+    await sendPtrQuery();
+    // 週期性查詢
+    periodicQueryTimer = Timer.periodic(sendQueryMessageInterval, (timer) {
+      if (isCompleted) return;
+      sendPtrQuery();
+    });
+
+    // Wait for scanDuration to complete (DLNA style)
+    Future.delayed(scanDuration, () {
+      if (!completer.isCompleted) completer.complete();
+    });
+
+    try {
+      await completer.future;
+    } catch (e) {
+      rethrow;
+    }
+    isCompleted = true;
+    periodicQueryTimer.cancel();
+    for (final sub in subscriptions) {
+      await sub.cancel();
     }
   } catch (e) {
-    await logger.error('errors.chromecast_scan_failed', tag: 'mDNS', error: e);
+    if (e is SocketException && e.osError?.errorCode == 1) {
+      await logger.error(
+        'errors.mdns_send_permission_denied',
+        tag: logTag,
+        params: {'error': e.toString()},
+      );
+      throw Exception(
+        'mDNS permission denied: unable to send multicast packets. Please ensure you have network and multicast permissions, or run as root/administrator.',
+      );
+    }
+    await logger.error('errors.scan_failed', tag: logTag, error: e);
   } finally {
     bool clientStopped = false;
     if (!clientStopped) {
@@ -149,280 +197,111 @@ Future<List<DiscoveredDevice>> scanChromecastDevices({
       } catch (_) {}
       clientStopped = true;
     }
+    periodicQueryTimer?.cancel();
+    for (final sub in subscriptions) {
+      await sub.cancel();
+    }
   }
-
-  // 從映射表中取出不重複的裝置
   devices.addAll(deviceMap.values);
-
   await logger.info(
-    'info.chromecast_scan_complete',
-    tag: 'mDNS',
+    'info.scan_complete',
+    tag: logTag,
     params: {'count': devices.length},
   );
   return devices;
+}
+
+/// Scan for Chromecast devices in the local network
+/// [onDeviceFound] 回調函數，當找到新裝置時調用
+Future<List<DiscoveredDevice>> scanChromecastDevices({
+  Function(DiscoveredDevice)? onDeviceFound,
+  Duration scanDuration = const Duration(seconds: 5), // 改名為 scanDuration
+}) async {
+  return scanMdnsDevices(
+    serviceType: '_googlecast._tcp',
+    mdnsType: '_googlecast._tcp',
+    deviceFactory: ({
+      required String ip,
+      required int port,
+      required String serviceName,
+      required Map<String, String> txtMap,
+      List<String>? mdnsTypes,
+    }) {
+      return DiscoveredDevice.fromChromecast(
+        ip: ip,
+        port: port,
+        serviceName: serviceName,
+        txtMap: txtMap,
+      );
+    },
+    onDeviceFound: onDeviceFound,
+    logTag: 'mDNS',
+    scanDuration: scanDuration, // 傳遞 scanDuration
+  );
 }
 
 /// Scan for AirPlay RX (接收端, 如 Apple TV, 支援 AirPlay RX 的 Mac/iOS)
 Future<List<DiscoveredDevice>> scanAirplayRxDevices({
   Function(DiscoveredDevice)? onDeviceFound,
+  Duration scanDuration = const Duration(seconds: 5), // 改名為 scanDuration
 }) async {
-  final logger = AppLogger();
-  await logger.info('info.start_airplay_rx_scan', tag: 'mDNS');
-  final List<DiscoveredDevice> devices = [];
-  final deviceMap = <String, DiscoveredDevice>{};
-  MDnsClient? client;
-
-  try {
-    client = MDnsClient(
-      rawDatagramSocketFactory: (
-        dynamic host,
-        int port, {
-        bool? reuseAddress,
-        bool? reusePort,
-        int? ttl,
-      }) {
-        return _safeBind(host, port, ttl: ttl);
-      },
-    );
-    await client.start();
-    await logger.info('info.standard_mdns_port', tag: 'mDNS');
-  } on SocketException catch (e) {
-    if (e.osError?.errorCode == 48 || e.osError?.errorCode == 10048) {
-      await logger.error(
-        'errors.port_in_use',
-        tag: 'mDNS',
-        params: {'port': e.port},
+  return scanMdnsDevices(
+    serviceType: '_airplay._tcp',
+    mdnsType: '_airplay._tcp',
+    deviceFactory: ({
+      required ip,
+      required port,
+      required String serviceName,
+      required txtMap,
+      List<String>? mdnsTypes,
+    }) {
+      return DiscoveredDevice.fromAirplay(
+        ip: ip,
+        port: port,
+        serviceName: serviceName,
+        txtMap: txtMap,
+        mdnsTypes: mdnsTypes,
       );
-      throw MdnsPortInUseException(
-        'mDNS port ${e.port} is in use, cannot scan for AirPlay RX devices',
-      );
-    }
-    rethrow;
-  } catch (e) {
-    await logger.error('errors.mdns_init_error', tag: 'mDNS', error: e);
-    rethrow;
-  }
-
-  try {
-    // dns-sd -B _airplay._tcp local
-    await for (final PtrResourceRecord ptr in client.lookup<PtrResourceRecord>(
-      ResourceRecordQuery.serverPointer('_airplay._tcp.local'),
-    )) {
-      final serviceName = ptr.domainName;
-      await for (final SrvResourceRecord srv in client
-          .lookup<SrvResourceRecord>(
-            ResourceRecordQuery.service(serviceName),
-          )) {
-        await logger.debug(
-          'debug.found_airplay_service',
-          tag: 'mDNS',
-          params: {
-            'target': srv.target,
-            'port': srv.port,
-            'priority': srv.priority,
-            'weight': srv.weight,
-          },
-        );
-        await for (final IPAddressResourceRecord ip in client
-            .lookup<IPAddressResourceRecord>(
-              ResourceRecordQuery.addressIPv4(srv.target),
-            )) {
-          await for (final TxtResourceRecord txt in client
-              .lookup<TxtResourceRecord>(
-                ResourceRecordQuery.text(serviceName),
-              )) {
-            final txtMap = <String, String>{};
-            final dynamic txtRaw = txt.text;
-            await _parseTxtRecord(txtRaw, txtMap, logger);
-
-            final device = DiscoveredDevice.fromAirplay(
-              ip: ip.address.address,
-              port: srv.port,
-              serviceName: serviceName,
-              txtMap: txtMap,
-              mdnsTypes: ['_airplay._tcp'],
-            );
-
-            final deviceId = device.id ?? '${device.ip}_${device.name}';
-            if (deviceMap.containsKey(deviceId)) {
-              await logger.debug(
-                'debug.duplicate_airplay_device',
-                tag: 'mDNS',
-                params: {'id': deviceId, 'name': device.name, 'ip': device.ip},
-              );
-              continue;
-            }
-            deviceMap[deviceId] = device;
-
-            await logger.info(
-              'info.found_airplay_device',
-              tag: 'mDNS',
-              params: {
-                'deviceType': 'AirPlay RX',
-                'name': device.name,
-                'ip': device.ip,
-                'model': device.model,
-              },
-            );
-            if (onDeviceFound != null) {
-              onDeviceFound(device);
-            }
-          }
-        }
-      }
-    }
-  } catch (e) {
-    await logger.error('errors.airplay_rx_scan_failed', tag: 'mDNS', error: e);
-  } finally {
-    bool clientStopped = false;
-    if (!clientStopped) {
-      try {
-        client.stop();
-      } catch (_) {}
-      clientStopped = true;
-    }
-  }
-  devices.addAll(deviceMap.values);
-  await logger.info(
-    'info.airplay_rx_scan_complete',
-    tag: 'mDNS',
-    params: {'count': devices.length},
+    },
+    onDeviceFound: onDeviceFound,
+    logTag: 'mDNS',
+    scanDuration: scanDuration, // 傳遞 scanDuration
   );
-  return devices;
 }
 
 /// Scan for AirPlay TX (發射端, 如 iPhone/iPad/Mac)
 Future<List<DiscoveredDevice>> scanAirplayTxDevices({
   Function(DiscoveredDevice)? onDeviceFound,
+  Duration scanDuration = const Duration(seconds: 5), // 改名為 scanDuration
 }) async {
-  final logger = AppLogger();
-  await logger.info('info.start_airplay_tx_scan', tag: 'mDNS');
-  final List<DiscoveredDevice> devices = [];
-  final deviceMap = <String, DiscoveredDevice>{};
-  MDnsClient? client;
-
-  try {
-    client = MDnsClient(
-      rawDatagramSocketFactory: (
-        dynamic host,
-        int port, {
-        bool? reuseAddress,
-        bool? reusePort,
-        int? ttl,
-      }) {
-        return _safeBind(host, port, ttl: ttl);
-      },
-    );
-    await client.start();
-    await logger.info('info.standard_mdns_port', tag: 'mDNS');
-  } on SocketException catch (e) {
-    if (e.osError?.errorCode == 48 || e.osError?.errorCode == 10048) {
-      await logger.error(
-        'errors.port_in_use',
-        tag: 'mDNS',
-        params: {'port': e.port},
+  return scanMdnsDevices(
+    serviceType: '_raop._tcp',
+    mdnsType: '_raop._tcp',
+    deviceFactory: ({
+      required ip,
+      required port,
+      required String serviceName,
+      required txtMap,
+      List<String>? mdnsTypes,
+    }) {
+      return DiscoveredDevice.fromAirplay(
+        ip: ip,
+        port: port,
+        serviceName: serviceName,
+        txtMap: txtMap,
+        mdnsTypes: mdnsTypes,
       );
-      throw MdnsPortInUseException(
-        'mDNS port ${e.port} is in use, cannot scan for AirPlay TX devices',
-      );
-    }
-    rethrow;
-  } catch (e) {
-    await logger.error('errors.mdns_init_error', tag: 'mDNS', error: e);
-    rethrow;
-  }
-
-  try {
-    // dns-sd -B _raop._tcp local
-    await for (final PtrResourceRecord ptr in client.lookup<PtrResourceRecord>(
-      ResourceRecordQuery.serverPointer('_raop._tcp.local'),
-    )) {
-      final serviceName = ptr.domainName;
-      await for (final SrvResourceRecord srv in client
-          .lookup<SrvResourceRecord>(
-            ResourceRecordQuery.service(serviceName),
-          )) {
-        await logger.debug(
-          'debug.found_raop_service',
-          tag: 'mDNS',
-          params: {
-            'target': srv.target,
-            'port': srv.port,
-            'priority': srv.priority,
-            'weight': srv.weight,
-          },
-        );
-        await for (final IPAddressResourceRecord ip in client
-            .lookup<IPAddressResourceRecord>(
-              ResourceRecordQuery.addressIPv4(srv.target),
-            )) {
-          await for (final TxtResourceRecord txt in client
-              .lookup<TxtResourceRecord>(
-                ResourceRecordQuery.text(serviceName),
-              )) {
-            final txtMap = <String, String>{};
-            final dynamic txtRaw = txt.text;
-            await _parseTxtRecord(txtRaw, txtMap, logger);
-
-            final device = DiscoveredDevice.fromAirplay(
-              ip: ip.address.address,
-              port: srv.port,
-              serviceName: serviceName,
-              txtMap: txtMap,
-              mdnsTypes: ['_raop._tcp'],
-            );
-
-            final deviceId = device.id ?? '${device.ip}_${device.name}';
-            if (deviceMap.containsKey(deviceId)) {
-              await logger.debug(
-                'debug.duplicate_airplay_tx_device',
-                tag: 'mDNS',
-                params: {'id': deviceId, 'name': device.name, 'ip': device.ip},
-              );
-              continue;
-            }
-            deviceMap[deviceId] = device;
-
-            await logger.info(
-              'info.found_airplay_tx_device',
-              tag: 'mDNS',
-              params: {
-                'deviceType': 'AirPlay TX',
-                'name': device.name,
-                'ip': device.ip,
-                'model': device.model,
-              },
-            );
-            if (onDeviceFound != null) {
-              onDeviceFound(device);
-            }
-          }
-        }
-      }
-    }
-  } catch (e) {
-    await logger.error('errors.airplay_tx_scan_failed', tag: 'mDNS', error: e);
-  } finally {
-    bool clientStopped = false;
-    if (!clientStopped) {
-      try {
-        client.stop();
-      } catch (_) {}
-      clientStopped = true;
-    }
-  }
-  devices.addAll(deviceMap.values);
-  await logger.info(
-    'info.airplay_tx_scan_complete',
-    tag: 'mDNS',
-    params: {'count': devices.length},
+    },
+    onDeviceFound: onDeviceFound,
+    logTag: 'mDNS',
+    scanDuration: scanDuration, // 傳遞 scanDuration
   );
-  return devices;
 }
 
-/// 安全嘗試 bind，優先用 reusePort=true，失敗再 fallback
+/// 安全嘗試 bind，所有平台都先嘗試 reusePort，失敗再 fallback
 Future<RawDatagramSocket> _safeBind(dynamic host, int port, {int? ttl}) async {
   try {
+    // 先嘗試帶 reusePort
     return await RawDatagramSocket.bind(
       host,
       port,
@@ -430,14 +309,24 @@ Future<RawDatagramSocket> _safeBind(dynamic host, int port, {int? ttl}) async {
       reusePort: true,
       ttl: ttl ?? 1,
     );
-  } catch (_) {
-    // fallback: 不支援 reusePort
-    return await RawDatagramSocket.bind(
-      host,
-      port,
-      reuseAddress: true,
-      ttl: ttl ?? 1,
-    );
+  } catch (e) {
+    // fallback: 不支援 reusePort 或權限不足
+    try {
+      return await RawDatagramSocket.bind(
+        host,
+        port,
+        reuseAddress: true,
+        ttl: ttl ?? 1,
+      );
+    } catch (e2) {
+      // 針對權限錯誤給出提示
+      if (e2 is SocketException && e2.osError?.errorCode == 1) {
+        throw Exception(
+          'Failed to bind mDNS port 5353. Please ensure you have sufficient permissions (e.g., run as root or administrator).',
+        );
+      }
+      rethrow;
+    }
   }
 }
 

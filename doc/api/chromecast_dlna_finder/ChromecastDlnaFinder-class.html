@@ -25,24 +25,21 @@
   <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">chromecast_dlna_finder</a></li>
-    <li><a href="../chromecast_dlna_finder">chromecast_dlna_finder.dart</a></li>
+    <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder.dart</a></li>
     <li class="self-crumb">ChromecastDlnaFinder class</li>
   </ol>
   <div class="self-name">ChromecastDlnaFinder</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
-  <div class="toggle" id="theme-button" title="Toggle brightness">
-    <label for="theme">
-      <input type="checkbox" id="theme" value="light-theme">
-      <span id="dark-theme-button" class="material-symbols-outlined">
-        dark_mode
-      </span>
-      <span id="light-theme-button" class="material-symbols-outlined">
-        light_mode
-      </span>
-    </label>
-  </div>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
 </header>
 <main>
 <div
@@ -66,8 +63,8 @@
   <section class="summary offset-anchor" id="constructors">
     <h2>Constructors</h2>
     <dl class="constructor-summary-list">
-        <dt id="ChromecastDlnaFinder" class="callable">
-          <span class="name"><a href="../chromecast_dlna_finder/ChromecastDlnaFinder/ChromecastDlnaFinder.html">ChromecastDlnaFinder</a></span><span class="signature">({<span class="parameter" id="-param-logger"><span class="type-annotation">AppLogger?</span> <span class="parameter-name">logger</span></span>})</span>
+        <dt id="ChromecastDlnaFinder.new" class="callable">
+          <span class="name"><a href="../chromecast_dlna_finder/ChromecastDlnaFinder/ChromecastDlnaFinder.html">ChromecastDlnaFinder.new</a></span><span class="signature">({<span class="parameter" id="-param-logger"><span class="type-annotation">AppLogger?</span> <span class="parameter-name">logger</span></span>})</span>
         </dt>
         <dd>
           Allow external injection of logger, default to AppLogger singleton
@@ -179,7 +176,7 @@ Can be listened to in Flutter UI for real-time device discovery events
 </dd>
 
         <dt id="findDevices" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/ChromecastDlnaFinder/findDevices.html">findDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="findDevices-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 5)</span></span>})
+  <span class="name"><a href="../chromecast_dlna_finder/ChromecastDlnaFinder/findDevices.html">findDevices</a></span><span class="signature">(<wbr>{<span class="parameter" id="findDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -192,7 +189,7 @@ Can be listened to in Flutter UI for real-time device discovery events
 </dd>
 
         <dt id="findDevicesAsJson" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/ChromecastDlnaFinder/findDevicesAsJson.html">findDevicesAsJson</a></span><span class="signature">(<wbr>{<span class="parameter" id="findDevicesAsJson-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 5)</span></span>})
+  <span class="name"><a href="../chromecast_dlna_finder/ChromecastDlnaFinder/findDevicesAsJson.html">findDevicesAsJson</a></span><span class="signature">(<wbr>{<span class="parameter" id="findDevicesAsJson-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter">dynamic</span>&gt;</span></span>&gt;</span></span>
   </span>
   
@@ -205,7 +202,7 @@ Can be listened to in Flutter UI for real-time device discovery events
 </dd>
 
         <dt id="findDevicesAsJsonString" class="callable">
-  <span class="name"><a href="../chromecast_dlna_finder/ChromecastDlnaFinder/findDevicesAsJsonString.html">findDevicesAsJsonString</a></span><span class="signature">(<wbr>{<span class="parameter" id="findDevicesAsJsonString-param-timeout"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">timeout</span> = <span class="default-value">const Duration(seconds: 5)</span>, </span><span class="parameter" id="findDevicesAsJsonString-param-pretty"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">pretty</span> = <span class="default-value">false</span></span>})
+  <span class="name"><a href="../chromecast_dlna_finder/ChromecastDlnaFinder/findDevicesAsJsonString.html">findDevicesAsJsonString</a></span><span class="signature">(<wbr>{<span class="parameter" id="findDevicesAsJsonString-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span>, </span><span class="parameter" id="findDevicesAsJsonString-param-pretty"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">pretty</span> = <span class="default-value">false</span></span>})
     <span class="returntype parameter">&#8594; <a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>&gt;</span></span>
   </span>
   
@@ -280,7 +277,7 @@ Can be listened to in Flutter UI for real-time device discovery events
 </header>
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">chromecast_dlna_finder</a></li>
-    <li><a href="../chromecast_dlna_finder">chromecast_dlna_finder</a></li>
+    <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder</a></li>
     <li class="self-crumb">ChromecastDlnaFinder class</li>
 </ol>
 
@@ -293,7 +290,7 @@ Can be listened to in Flutter UI for real-time device discovery events
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.1.1
+      1.3.0
   </span>
   
 </footer>

@@ -52,17 +52,19 @@ class ChromecastDlnaFinder {
 
   /// Discover all devices and return raw data model
   Future<Map<String, List<DiscoveredDevice>>> findDevices({
-    Duration timeout = const Duration(seconds: 5),
+    Duration scanDuration = const Duration(seconds: 5),
   }) async {
-    final result = await _discoveryService.discoverAllDevices(timeout: timeout);
+    final result = await _discoveryService.discoverAllDevices(
+      scanDuration: scanDuration,
+    );
     return result;
   }
 
   /// Discover all devices and return JSON format data
   Future<Map<String, dynamic>> findDevicesAsJson({
-    Duration timeout = const Duration(seconds: 5),
+    Duration scanDuration = const Duration(seconds: 5),
   }) async {
-    final devices = await findDevices(timeout: timeout);
+    final devices = await findDevices(scanDuration: scanDuration);
     final json = _discoveryService.toJson(devices);
     await _logger.debug(
       'Generated JSON data: ${json.keys.length} main fields',
@@ -73,10 +75,10 @@ class ChromecastDlnaFinder {
 
   /// Discover all devices and return JSON string
   Future<String> findDevicesAsJsonString({
-    Duration timeout = const Duration(seconds: 5),
+    Duration scanDuration = const Duration(seconds: 5),
     bool pretty = false,
   }) async {
-    final jsonMap = await findDevicesAsJson(timeout: timeout);
+    final jsonMap = await findDevicesAsJson(scanDuration: scanDuration);
     String result;
 
     if (pretty) {

@@ -8,4 +8,3 @@ export 'src/discovery/cached_device.dart';
 export 'src/util/dlna_device_utils.dart';
 export 'src/util/dlna_soap_util.dart';
 export 'src/util/platform_info.dart';
-export 'src/util/platform_info_stub.dart';

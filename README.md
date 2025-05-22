@@ -87,7 +87,7 @@ dart pub global activate chromecast_dlna_finder
 Run a scan:
 
 ```bash
-chromecast_dlna_finder --timeout 5
+chromecast_dlna_finder --scan-duration 5
 ```
 
 Command-line options:
@@ -95,7 +95,7 @@ Command-line options:
 ```
 Options:
   -h, --help            Show help information
-  -t, --timeout=<seconds>  Scan timeout in seconds (default: 5)
+  -t, --scan-duration=<seconds>  Scan duration in seconds (default: 5)
   -m, --minify          Output minified JSON
   -q, --quiet           Suppress progress messages
   -d, --debug           Enable verbose debug information
@@ -122,7 +122,7 @@ Future<void> main() async {
   final finder = ChromecastDlnaFinder(logger: logger);
 
   // Scan for devices
-  final devices = await finder.findDevices(timeout: Duration(seconds: 5));
+  final devices = await finder.findDevices(scanDuration: Duration(seconds: 5));
 
   // Output all discovered devices
   print('Discovered Chromecast devices:');
@@ -155,36 +155,73 @@ Future<void> main() async {
 
 ## Output Format
 
-Scan results are output in JSON format with the following structure:
+掃描結果會輸出如下 JSON 結構（欄位依實際掃描結果而定）：
 
 ```json
 {
-  "status": true,
+  "all": [ ... ],
+  "chromecast": [ ... ],
+  "dlna": [ ... ],
+  "dlna_rx": [ ... ],
+  "dlna_tx": [ ... ],
+  "airplay": [ ... ],
+  "airplay_rx": [ ... ],
+  "airplay_tx": [ ... ],
+  "count": {
+    "chromecast": { "total": 1, "rx": 1, "tx": 0 },
+    "dlna": { "total": 1, "rx": 1, "tx": 0 },
+    "ariplay": { "total": 3, "rx": 3, "tx": 3 }
+  },
   "error": [],
-  "chromecast": [],
-  "chromecast_dongle": [],
-  "chromecast_audio": [],
-  "dlna": [],
-  "dlna_renderer": [],
-  "dlna_media_server": [],
-  "airplay_rx": [],
-  "airplay_tx": []
+  "status": true
 }
 ```
 
 ## Device Information
 
-Each device object contains the following information:
+Each device object contains the following information (sensitive information is replaced with ***):
 
 ```json
 {
-  "name": "Living Room TV",
-  "ip": "192.168.1.100",
+  "name": "***",
+  "ip": "***",
   "type": "chromecastDongle",
-  "model": "Chromecast",
-  "location": "...",
-  "avTransportControlUrl": "...",
-  "renderingControlUrl": "..."
+  "model": "***",
+  "location": "***",
+  "id": "***",
+  "friendlyName": "***",
+  "port": 8009,
+  "extra": { /* ...extra device info... */ },
+  "mdnsTypes": [ "_airplay._tcp" ]
+}
+```
+
+## Command Line Example (隱藏敏感資訊)
+
+```bash
+% dart bin/chromecast_dlna_finder.dart
+[2025-05-22 13:23:42.446][INFO] [Config] Logging system configured: outputs={LoggerOutput.stderr}, minLevel=AppLogLevel.info
+{
+  "all": [
+    { "name": "***", "ip": "***", "type": "chromecastDongle", ... },
+    { "name": "***", "ip": "***", "type": "dlnaRenderer", ... },
+    { "name": "***", "ip": "***", "type": "airplay", ... }
+    // ... others ...
+  ],
+  "chromecast": [ { "name": "***", "ip": "***", ... } ],
+  "dlna": [ { "name": "***", "ip": "***", ... } ],
+  "airplay": [ { "name": "***", "ip": "***", ... } ],
+  "airplay_rx": [ { "name": "***", "ip": "***", ... } ],
+  "airplay_tx": [ { "name": "***", "ip": "***", ... } ],
+  "dlna_rx": [ { "name": "***", "ip": "***", ... } ],
+  "dlna_tx": [],
+  "count": {
+    "chromecast": { "total": 1, "rx": 1, "tx": 0 },
+    "dlna": { "total": 1, "rx": 1, "tx": 0 },
+    "ariplay": { "total": 3, "rx": 3, "tx": 3 }
+  },
+  "error": [],
+  "status": true
 }
 ```
 
@@ -197,7 +234,7 @@ import 'package:chromecast_dlna_finder/chromecast_dlna_finder.dart';
 
 Future<void> main() async {
   final finder = ChromecastDlnaFinder();
-  final devices = await finder.findDevices(timeout: Duration(seconds: 5));
+  final devices = await finder.findDevices(scanDuration: Duration(seconds: 5));
   for (final device in devices['dlna_renderer'] ?? []) {
     print('Renderer: ${device.name}');
     print('  - AVTransport control URL: ${device.avTransportControlUrl}');

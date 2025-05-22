@@ -28,10 +28,37 @@ class DiscoveryService {
     }
   }
 
+  // 生成更可靠的裝置唯一識別鍵
+  String getDeviceKey(DiscoveredDevice device) {
+    // 如果 Chromecast 裝置有 ID，優先使用
+    if (device.isChromecast && device.id != null) {
+      return 'chromecast_${device.id}';
+    }
+    // AirPlay 裝置唯一識別
+    if (device.type == DeviceType.airplay) {
+      // 優先使用 location
+      return 'airplay_${device.location ?? '${device.ip}_${device.name}'}';
+    }
+    // 如果有 location，結合 IP 和 location 作為識別
+    if (device.location != null) {
+      // 對於 DLNA renderer，加上控制 URL 以更精確識別
+      if (device.isDlnaRenderer && device.avTransportControlUrl != null) {
+        return 'dlna_${device.location}_${device.avTransportControlUrl}';
+      }
+      return 'device_${device.type}_${device.location}';
+    }
+    // 如果 model 非空，結合 name、IP 和 model
+    if (device.model != null) {
+      return 'device_${device.name}_${device.ip}_${device.model}';
+    }
+    // 最後的退路：使用名稱+IP+類型的組合
+    return 'device_${device.name}_${device.ip}_${device.type}';
+  }
+
   /// Discover all types of devices
   /// Including Chromecast and DLNA (Renderer and Media Server)
   Future<Map<String, List<DiscoveredDevice>>> discoverAllDevices({
-    Duration timeout = const Duration(seconds: 5),
+    Duration scanDuration = const Duration(seconds: 5),
   }) async {
     if (_eventController.isClosed) {
       throw StateError(
@@ -41,7 +68,12 @@ class DiscoveryService {
     final result = <String, List<DiscoveredDevice>>{
       'chromecast': [],
       'dlna': [],
-      'airplay': [], // 新增 AirPlay 結果欄位
+      'dlna_rx': [],
+      'dlna_tx': [],
+      'airplay': [],
+      'airplay_rx': [],
+      'airplay_tx': [],
+      'all': [],
     };
     final errors = <String>[];
 
@@ -49,13 +81,16 @@ class DiscoveryService {
     _safeAddEvent(SearchStartedEvent('all', 'DiscoveryService'));
 
     // 包裝函數：掃描 Chromecast
-    Future<List<DiscoveredDevice>> scanChromecastDevicesWithEvents() async {
+    Future<List<DiscoveredDevice>> scanChromecastDevicesWithEvents({
+      Duration scanDuration = const Duration(seconds: 5),
+    }) async {
       _safeAddEvent(SearchStartedEvent('chromecast', 'mDNS'));
       try {
         final devices = await scanChromecastDevices(
           onDeviceFound: (device) {
             _safeAddEvent(DeviceFoundEvent(device, 'mDNS'));
           },
+          scanDuration: scanDuration,
         );
         _safeAddEvent(
           SearchCompleteEvent('chromecast', devices.length, 'mDNS'),
@@ -68,11 +103,13 @@ class DiscoveryService {
     }
 
     // 包裝函數：掃描 DLNA
-    Future<List<DiscoveredDevice>> scanAllDlnaDevicesWithEvents() async {
+    Future<List<DiscoveredDevice>> scanAllDlnaDevicesWithEvents({
+      Duration scanDuration = const Duration(seconds: 5),
+    }) async {
       _safeAddEvent(SearchStartedEvent('dlna', 'SSDP'));
       try {
         final devices = await scanAllDlnaDevices(
-          timeout: timeout,
+          scanDuration: scanDuration,
           onDeviceFound: (device) {
             _safeAddEvent(DeviceFoundEvent(device, 'SSDP'));
           },
@@ -86,13 +123,16 @@ class DiscoveryService {
     }
 
     // 包裝函數：掃描 AirPlay RX
-    Future<List<DiscoveredDevice>> scanAirplayRxDevicesWithEvents() async {
+    Future<List<DiscoveredDevice>> scanAirplayRxDevicesWithEvents({
+      Duration scanDuration = const Duration(seconds: 5),
+    }) async {
       _safeAddEvent(SearchStartedEvent('airplay_rx', 'mDNS'));
       try {
         final devices = await scanAirplayRxDevices(
           onDeviceFound: (device) {
             _safeAddEvent(DeviceFoundEvent(device, 'mDNS'));
           },
+          scanDuration: scanDuration,
         );
         _safeAddEvent(
           SearchCompleteEvent('airplay_rx', devices.length, 'mDNS'),
@@ -105,13 +145,16 @@ class DiscoveryService {
     }
 
     // 包裝函數：掃描 AirPlay TX
-    Future<List<DiscoveredDevice>> scanAirplayTxDevicesWithEvents() async {
+    Future<List<DiscoveredDevice>> scanAirplayTxDevicesWithEvents({
+      Duration scanDuration = const Duration(seconds: 5),
+    }) async {
       _safeAddEvent(SearchStartedEvent('airplay_tx', 'mDNS'));
       try {
         final devices = await scanAirplayTxDevices(
           onDeviceFound: (device) {
             _safeAddEvent(DeviceFoundEvent(device, 'mDNS'));
           },
+          scanDuration: scanDuration,
         );
         _safeAddEvent(
           SearchCompleteEvent('airplay_tx', devices.length, 'mDNS'),
@@ -125,29 +168,46 @@ class DiscoveryService {
 
     try {
       // 並行掃描 chromecast, dlna, airplay_rx, airplay_tx
-      final chromecastDevicesFuture = scanChromecastDevicesWithEvents();
-      final dlnaDevicesFuture = scanAllDlnaDevicesWithEvents();
-      final airplayRxDevicesFuture = scanAirplayRxDevicesWithEvents();
-      final airplayTxDevicesFuture = scanAirplayTxDevicesWithEvents();
+      final chromecastDevicesFuture = scanChromecastDevicesWithEvents(
+        scanDuration: scanDuration,
+      );
+      final dlnaDevicesFuture = scanAllDlnaDevicesWithEvents(
+        scanDuration: scanDuration,
+      );
+      final airplayRxDevicesFuture = scanAirplayRxDevicesWithEvents(
+        scanDuration: scanDuration,
+      );
+      final airplayTxDevicesFuture = scanAirplayTxDevicesWithEvents(
+        scanDuration: scanDuration,
+      );
       final results = await Future.wait([
         chromecastDevicesFuture,
         dlnaDevicesFuture,
         airplayRxDevicesFuture,
         airplayTxDevicesFuture,
       ]);
-      result['chromecast'] = results[0];
-      result['dlna'] = results[1];
-      // 將 airplay_rx, airplay_tx 合併到 airplay，並去重
-      final airplayMap = <String, DiscoveredDevice>{};
+      final deviceMap = <String, DiscoveredDevice>{};
+
+      deviceMap.clear();
+      for (final d in results[0]) {
+        deviceMap[getDeviceKey(d)] = d;
+      }
+      result['chromecast'] = deviceMap.values.toList();
+
+      deviceMap.clear();
+      for (final d in results[1]) {
+        deviceMap[getDeviceKey(d)] = d;
+      }
+      result['dlna'] = deviceMap.values.toList();
+
+      deviceMap.clear();
       for (final d in results[2]) {
-        final key = d.ip + (d.id ?? '') + (d.name);
-        airplayMap[key] = d;
+        deviceMap[getDeviceKey(d)] = d;
       }
       for (final d in results[3]) {
-        final key = d.ip + (d.id ?? '') + (d.name);
-        airplayMap[key] = d;
+        deviceMap[getDeviceKey(d)] = d;
       }
-      result['airplay'] = airplayMap.values.toList();
+      result['airplay'] = deviceMap.values.toList();
     } catch (e) {
       await _logger.error(
         'errors.unexpected_scan_error',
@@ -155,122 +215,7 @@ class DiscoveryService {
         error: e,
         params: {'error': e.toString()},
       );
-      errors.add('errors.unexpected_scan_error');
-    }
-
-    // 去除重複裝置
-    // 建立一個臨時Map來檢查裝置是否重複，使用更可靠的識別方式
-    final uniqueDevices = <String, DiscoveredDevice>{};
-    final duplicates = <DiscoveredDevice>[];
-
-    // 生成更可靠的裝置唯一識別鍵
-    String getDeviceKey(DiscoveredDevice device) {
-      // 如果 Chromecast 裝置有 ID，優先使用
-      if (device.isChromecast && device.id != null) {
-        return 'chromecast_${device.id}';
-      }
-      // AirPlay 裝置唯一識別
-      if (device.type == DeviceType.airplay) {
-        // 若有 name 優先用 name
-        return 'airplay_${device.name}';
-      }
-      // 如果有 location，結合 IP 和 location 作為識別
-      if (device.location != null) {
-        // 對於 DLNA renderer，加上控制 URL 以更精確識別
-        if (device.isDlnaRenderer && device.avTransportControlUrl != null) {
-          return 'dlna_${device.location}_${device.avTransportControlUrl}';
-        }
-        return 'device_${device.type}_${device.location}';
-      }
-      // 如果 model 非空，結合 name、IP 和 model
-      if (device.model != null) {
-        return 'device_${device.name}_${device.ip}_${device.model}';
-      }
-      // 最後的退路：使用名稱+IP+類型的組合
-      return 'device_${device.name}_${device.ip}_${device.type}';
-    }
-
-    // 處理 Chromecast 裝置
-    for (final device in result['chromecast']!) {
-      final key = getDeviceKey(device);
-      if (uniqueDevices.containsKey(key)) {
-        await _logger.debug(
-          'debug.duplicate_device',
-          tag: 'Discovery',
-          params: {
-            'type': 'Chromecast',
-            'name': device.name,
-            'ip': device.ip,
-            'key': key,
-          },
-        );
-        duplicates.add(device);
-      } else {
-        uniqueDevices[key] = device;
-      }
-    }
-
-    // 處理 DLNA 裝置
-    for (final device in result['dlna']!) {
-      final key = getDeviceKey(device);
-      if (uniqueDevices.containsKey(key)) {
-        await _logger.debug(
-          'debug.duplicate_device',
-          tag: 'Discovery',
-          params: {
-            'type': 'DLNA',
-            'name': device.name,
-            'ip': device.ip,
-            'key': key,
-          },
-        );
-        duplicates.add(device);
-      } else {
-        uniqueDevices[key] = device;
-      }
-    }
-
-    // 處理 AirPlay 裝置
-    for (final device in result['airplay']!) {
-      final key = getDeviceKey(device);
-      if (uniqueDevices.containsKey(key)) {
-        await _logger.debug(
-          'debug.duplicate_device',
-          tag: 'Discovery',
-          params: {
-            'type': 'AirPlay',
-            'name': device.name,
-            'ip': device.ip,
-            'key': key,
-          },
-        );
-        duplicates.add(device);
-      } else {
-        uniqueDevices[key] = device;
-      }
-    }
-
-    // 更新結果中的裝置清單，移除重複項
-    if (duplicates.isNotEmpty) {
-      await _logger.info(
-        'info.removed_duplicate_devices',
-        tag: 'Discovery',
-        params: {'count': duplicates.length},
-      );
-
-      // 從所有列表中移除重複裝置
-      result['chromecast'] =
-          result['chromecast']!
-              .where((device) => !duplicates.contains(device))
-              .toList();
-      result['dlna'] =
-          result['dlna']!
-              .where((device) => !duplicates.contains(device))
-              .toList();
-      result['airplay'] =
-          result['airplay']!
-              .where((device) => !duplicates.contains(device))
-              .toList();
+      errors.add(['errors.unexpected_scan_error', e.toString()].join(' '));
     }
 
     // Categorize Chromecast devices by type
@@ -300,6 +245,8 @@ class DiscoveryService {
       }
     }
 
+    result['dlna_rx'] = dlnaRenderers;
+    result['dlna_tx'] = dlnaMediaServers;
     result['dlna_renderer'] = dlnaRenderers;
     result['dlna_media_server'] = dlnaMediaServers;
 
@@ -322,13 +269,12 @@ class DiscoveryService {
     }
     result['airplay_rx'] = airplayRxDevices.values.toList();
     result['airplay_tx'] = airplayTxDevices.values.toList();
-    // airplay 只保留唯一裝置（不重複）
-    final airplayUnique = <String, DiscoveredDevice>{};
-    for (final device in result['airplay']!) {
-      final key = device.ip + (device.id ?? '') + (device.name);
-      airplayUnique[key] = device;
-    }
-    result['airplay'] = airplayUnique.values.toList();
+
+    result['all'] = [
+      ...result['chromecast']!,
+      ...result['dlna']!,
+      ...result['airplay']!,
+    ];
 
     // Add error information
     result['errors'] =
@@ -351,63 +297,55 @@ class DiscoveryService {
   Map<String, dynamic> toJson(Map<String, List<DiscoveredDevice>> result) {
     final json = <String, dynamic>{};
 
-    // Process each device type
-    json['chromecast'] =
-        (result['chromecast'] ?? []).map((device) => device.toJson()).toList();
-    json['chromecast_dongle'] =
-        (result['chromecast_dongle'] ?? [])
-            .map((device) => device.toJson())
-            .toList();
-    json['chromecast_audio'] =
-        (result['chromecast_audio'] ?? [])
-            .map((device) => device.toJson())
-            .toList();
-    json['dlna'] =
-        (result['dlna'] ?? []).map((device) => device.toJson()).toList();
-    json['dlna_renderer'] =
-        (result['dlna_renderer'] ?? [])
-            .map((device) => device.toJson())
-            .toList();
-    json['dlna_media_server'] =
-        (result['dlna_media_server'] ?? [])
-            .map((device) => device.toJson())
-            .toList();
-    json['airplay'] =
-        (result['airplay'] ?? []).map((device) => device.toJson()).toList();
-    json['airplay_tx'] =
-        (result['airplay_tx'] ?? []).map((device) => device.toJson()).toList();
-    json['airplay_rx'] =
-        (result['airplay_rx'] ?? []).map((device) => device.toJson()).toList();
-    // 不再輸出 airplay_device
+    for (final field in [
+      'all',
+      'chromecast',
+      'chromecast_dongle',
+      'chromecast_audio',
+      'dlna',
+      'dlna_renderer',
+      'dlna_media_server',
+      'dlna_rx',
+      'dlna_tx',
+      'airplay',
+      'airplay_rx',
+      'airplay_tx',
+    ]) {
+      json[field] =
+          (result[field] ?? []).map((device) => device.toJson()).toList();
+    }
 
-    // 計算 RX/TX 數量
-    final rxSet = <String>{};
-    for (final device in result['airplay_rx'] ?? []) {
-      rxSet.add(device.ip + (device.id ?? '') + (device.name));
+    final airplayIPSet = <String>{};
+    for (final device in result['airplay'] ?? []) {
+      airplayIPSet.add(device.ip);
     }
+
+    final dlnaIPSet = <String>{};
+    for (final device in result['dlna'] ?? []) {
+      dlnaIPSet.add(device.ip);
+    }
+
+    final chromecastIPSet = <String>{};
     for (final device in result['chromecast'] ?? []) {
-      rxSet.add(device.ip + (device.id ?? '') + (device.name));
+      chromecastIPSet.add(device.ip);
     }
-    for (final device in result['dlna_renderer'] ?? []) {
-      rxSet.add(device.ip + (device.id ?? '') + (device.name));
-    }
-    // TX: DLNA Media Server + AirPlay TX
-    final txSet = <String>{};
-    for (final device in result['dlna_media_server'] ?? []) {
-      txSet.add(device.ip + (device.id ?? '') + (device.name));
-    }
-    for (final device in result['airplay_tx'] ?? []) {
-      txSet.add(device.ip + (device.id ?? '') + (device.name));
-    }
-    // total: RX + TX（去重複）
-    final totalSet = <String>{};
-    totalSet.addAll(rxSet);
-    totalSet.addAll(txSet);
 
     json['count'] = {
-      'tx': txSet.length,
-      'rx': rxSet.length,
-      'total': totalSet.length,
+      'chromecast': {
+        'total': chromecastIPSet.length,
+        'rx': chromecastIPSet.length,
+        'tx': 0,
+      },
+      'dlna': {
+        'total': dlnaIPSet.length,
+        'rx': result['dlna_rx']?.length ?? 0,
+        'tx': result['dlna_tx']?.length ?? 0,
+      },
+      'ariplay': {
+        'total': airplayIPSet.length,
+        'rx': result['airplay_rx']?.length ?? 0,
+        'tx': result['airplay_tx']?.length ?? 0,
+      },
     };
 
     // Process errors
