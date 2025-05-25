@@ -269,15 +269,17 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
   final airplayTxDevices = &lt;String, DiscoveredDevice&gt;{};
   for (final device in result[&#39;airplay&#39;]!) {
     final mdnsTypes = device.mdnsTypes ?? &lt;String&gt;[];
-    final hasAirplay = mdnsTypes.contains(&#39;_airplay._tcp&#39;);
+    final hasAirplayVideo = mdnsTypes.contains(&#39;_airplay._tcp&#39;);
     final hasRaop = mdnsTypes.contains(&#39;_raop._tcp&#39;);
+    final hasCompanionLink = mdnsTypes.contains(&#39;_companion-link._tcp&#39;);
     final key = device.ip + (device.id ?? &#39;&#39;) + (device.name);
-    &#47;&#47; RX: 只收錄有 _airplay._tcp 的裝置
-    if (hasAirplay) {
+
+    &#47;&#47; RX: 收錄 AirPlay 接收端裝置 (_airplay._tcp 或 _raop._tcp)
+    if (hasAirplayVideo || hasRaop) {
       airplayRxDevices[key] = device;
     }
-    &#47;&#47; TX: 只收錄有 _raop._tcp 的裝置
-    if (hasRaop) {
+    &#47;&#47; TX: 只收錄有 _companion-link._tcp 的裝置
+    if (hasCompanionLink) {
       airplayTxDevices[key] = device;
     }
   }
@@ -333,7 +335,7 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.3.0
+      1.4.0
   </span>
   
 </footer>

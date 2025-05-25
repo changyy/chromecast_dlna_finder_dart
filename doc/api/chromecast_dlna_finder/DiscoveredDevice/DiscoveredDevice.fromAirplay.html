@@ -85,10 +85,14 @@
     location: location ?? serviceName,
     serviceName: serviceName,
   );
+
+  &#47;&#47; 智能判斷具體的 AirPlay 裝置類型
+  DeviceType deviceType = _determineAirplayDeviceType(mdnsTypes, txtMap);
+
   return DiscoveredDevice(
     name: bestName,
     ip: ip,
-    type: DeviceType.airplay,
+    type: deviceType,
     model: txtMap[&#39;md&#39;],
     location: location ?? serviceName,
     id: txtMap[&#39;id&#39;],
@@ -125,7 +129,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.3.0
+      1.4.0
   </span>
   
 </footer>

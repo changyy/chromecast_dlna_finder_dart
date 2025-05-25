@@ -275,8 +275,8 @@ Future<List<DiscoveredDevice>> scanAirplayTxDevices({
   Duration scanDuration = const Duration(seconds: 5), // 改名為 scanDuration
 }) async {
   return scanMdnsDevices(
-    serviceType: '_raop._tcp',
-    mdnsType: '_raop._tcp',
+    serviceType: '_companion-link._tcp',
+    mdnsType: '_companion-link._tcp',
     deviceFactory: ({
       required ip,
       required port,

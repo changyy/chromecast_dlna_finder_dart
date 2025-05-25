@@ -1,3 +1,18 @@
+## 1.4.0
+
+- **BREAKING CHANGE**: Simplified AirPlay device type enum from 5 types to 3 types for cleaner classification:
+  - Removed: `airplayTxMobile`, `airplayTxDesktop`, and backward-compatible `airplay` type
+  - Kept: `airplayRxVideo`, `airplayRxAudio`, `airplayTx`
+- Implemented direct mDNS service type mapping for AirPlay device classification:
+  - `_airplay._tcp` → `airplayRxVideo` (AirPlay video receiver)
+  - `_raop._tcp` → `airplayRxAudio` (AirPlay audio receiver)  
+  - `_companion-link._tcp` → `airplayTx` (AirPlay transmitter)
+- Updated `scanAirplayTxDevices` to use `_companion-link._tcp` instead of `_raop._tcp` for better device categorization
+- Enhanced `DiscoveryService` device categorization logic to properly handle the new simplified AirPlay types
+- Improved AirPlay device getter methods (`isAirplayTx`, `isAirplay`, `isAirplayRx`) to work with simplified enum structure
+- All existing `isAirplay` checks continue to work, maintaining backward compatibility for device detection logic
+- Updated device classification logic to be more straightforward and maintainable
+
 ## 1.3.0
 
 - Enhanced output format: added `dlna_rx`, `dlna_tx`, `airplay_rx`, `airplay_tx`, and `count` fields to the JSON result for more granular device categorization.

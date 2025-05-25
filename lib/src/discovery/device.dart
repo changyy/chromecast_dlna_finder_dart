@@ -4,7 +4,9 @@ enum DeviceType {
   dlnaMediaServer,
   chromecastDongle,
   chromecastAudio,
-  airplay, // 新增 AirPlay 型別
+  airplayRxVideo, // AirPlay 接收端 - 視訊（_airplay._tcp）
+  airplayRxAudio, // AirPlay 接收端 - 音訊（_raop._tcp）
+  airplayTx, // AirPlay 發射端（_companion-link._tcp）
   unknown,
 }
 
@@ -48,6 +50,14 @@ class DiscoveredDevice {
   bool get isChromecastAudio => type == DeviceType.chromecastAudio;
   bool get isChromecast =>
       type == DeviceType.chromecastDongle || type == DeviceType.chromecastAudio;
+
+  // AirPlay 裝置判斷
+  bool get isAirplayRxVideo => type == DeviceType.airplayRxVideo;
+  bool get isAirplayRxAudio => type == DeviceType.airplayRxAudio;
+  bool get isAirplayTx => type == DeviceType.airplayTx;
+  bool get isAirplayRx =>
+      type == DeviceType.airplayRxVideo || type == DeviceType.airplayRxAudio;
+  bool get isAirplay => isAirplayRx || isAirplayTx;
 
   Map<String, dynamic> toJson() {
     return {
@@ -148,10 +158,14 @@ class DiscoveredDevice {
       location: location ?? serviceName,
       serviceName: serviceName,
     );
+
+    // 智能判斷具體的 AirPlay 裝置類型
+    DeviceType deviceType = _determineAirplayDeviceType(mdnsTypes, txtMap);
+
     return DiscoveredDevice(
       name: bestName,
       ip: ip,
-      type: DeviceType.airplay,
+      type: deviceType,
       model: txtMap['md'],
       location: location ?? serviceName,
       id: txtMap['id'],
@@ -160,6 +174,30 @@ class DiscoveredDevice {
       extra: txtMap,
       mdnsTypes: mdnsTypes, // 新增
     );
+  }
+
+  /// 根據 mDNS 類型判斷 AirPlay 裝置類型
+  static DeviceType _determineAirplayDeviceType(
+    List<String>? mdnsTypes,
+    Map<String, String> txtMap,
+  ) {
+    final types = mdnsTypes ?? <String>[];
+
+    // 根據 mDNS 服務類型直接判斷
+    if (types.contains('_airplay._tcp')) {
+      return DeviceType.airplayRxVideo; // AirPlay 視訊接收端
+    }
+
+    if (types.contains('_raop._tcp')) {
+      return DeviceType.airplayRxAudio; // AirPlay 音訊接收端
+    }
+
+    if (types.contains('_companion-link._tcp')) {
+      return DeviceType.airplayTx; // AirPlay 發射端
+    }
+
+    // 如果沒有匹配的服務類型，預設為視訊接收端
+    return DeviceType.airplayRxVideo;
   }
 }
 

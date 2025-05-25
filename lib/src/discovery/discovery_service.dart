@@ -35,7 +35,7 @@ class DiscoveryService {
       return 'chromecast_${device.id}';
     }
     // AirPlay 裝置唯一識別
-    if (device.type == DeviceType.airplay) {
+    if (device.isAirplay) {
       // 優先使用 location
       return 'airplay_${device.location ?? '${device.ip}_${device.name}'}';
     }
@@ -255,15 +255,17 @@ class DiscoveryService {
     final airplayTxDevices = <String, DiscoveredDevice>{};
     for (final device in result['airplay']!) {
       final mdnsTypes = device.mdnsTypes ?? <String>[];
-      final hasAirplay = mdnsTypes.contains('_airplay._tcp');
+      final hasAirplayVideo = mdnsTypes.contains('_airplay._tcp');
       final hasRaop = mdnsTypes.contains('_raop._tcp');
+      final hasCompanionLink = mdnsTypes.contains('_companion-link._tcp');
       final key = device.ip + (device.id ?? '') + (device.name);
-      // RX: 只收錄有 _airplay._tcp 的裝置
-      if (hasAirplay) {
+
+      // RX: 收錄 AirPlay 接收端裝置 (_airplay._tcp 或 _raop._tcp)
+      if (hasAirplayVideo || hasRaop) {
         airplayRxDevices[key] = device;
       }
-      // TX: 只收錄有 _raop._tcp 的裝置
-      if (hasRaop) {
+      // TX: 只收錄有 _companion-link._tcp 的裝置
+      if (hasCompanionLink) {
         airplayTxDevices[key] = device;
       }
     }

@@ -73,7 +73,7 @@
     return &#39;chromecast_${device.id}&#39;;
   }
   &#47;&#47; AirPlay 裝置唯一識別
-  if (device.type == DeviceType.airplay) {
+  if (device.isAirplay) {
     &#47;&#47; 優先使用 location
     return &#39;airplay_${device.location ?? &#39;${device.ip}_${device.name}&#39;}&#39;;
   }
@@ -119,7 +119,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.3.0
+      1.4.0
   </span>
   
 </footer>
