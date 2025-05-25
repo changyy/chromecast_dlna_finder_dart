@@ -2,12 +2,12 @@
 
 [![pub package](https://img.shields.io/pub/v/chromecast_dlna_finder.svg)](https://pub.dev/packages/chromecast_dlna_finder)
 
-A Dart package for discovering Chromecast and DLNA devices on your local network, providing easy-to-use APIs for scanning, categorizing, and interacting with these devices.
+A Dart package for discovering Chromecast, DLNA, and AirPlay devices on your local network, providing easy-to-use APIs for scanning, categorizing, and interacting with these devices.
 
 ## Features
 
-- 🔍 Scan for all Chromecast and DLNA devices on your local network
-- 📊 Automatic device categorization (Chromecast Dongle, Chromecast Audio, DLNA Renderer, DLNA Media Server)
+- 🔍 Scan for all Chromecast, DLNA, and AirPlay devices on your local network
+- 📊 Automatic device categorization (Chromecast Dongle, Chromecast Audio, DLNA Renderer, DLNA Media Server, AirPlay RX Video, AirPlay RX Audio, AirPlay TX)
 - 🌐 Support for both command-line tools and Dart/Flutter/desktop applications
 - 🔄 Continuous scanning mode support
 - 🌍 Multilingual support (English, Traditional Chinese, Simplified Chinese, Japanese, German, French, Spanish, Italian, Russian, Portuguese, Hong Kong Chinese, and more)
@@ -26,8 +26,25 @@ Or manually add it to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  chromecast_dlna_finder: ^1.2.0
+  chromecast_dlna_finder: ^1.4.0
 ```
+
+## ⚠️ Breaking Changes in v1.4.0
+
+**AirPlay Device Type Simplification**: The AirPlay device type enumeration has been simplified from 5 types to 3 types for cleaner classification:
+
+- **Removed types**: `airplayTxMobile`, `airplayTxDesktop`, and backward-compatible `airplay` type
+- **Kept types**: `airplayRxVideo`, `airplayRxAudio`, `airplayTx`
+
+**Migration Guide**:
+- If you were checking for `DeviceType.airplayTxMobile` or `DeviceType.airplayTxDesktop`, use `DeviceType.airplayTx` instead
+- If you were checking for the generic `DeviceType.airplay`, use the specific type (`airplayRxVideo`, `airplayRxAudio`, or `airplayTx`) or the helper methods (`isAirplay`, `isAirplayRx`, `isAirplayTx`)
+- All existing `isAirplay*` getter methods continue to work and maintain backward compatibility
+
+**New Direct mDNS Service Mapping**:
+- `_airplay._tcp` → `airplayRxVideo` (AirPlay video receiver)
+- `_raop._tcp` → `airplayRxAudio` (AirPlay audio receiver)  
+- `_companion-link._tcp` → `airplayTx` (AirPlay transmitter)
 
 ## Architecture Overview
 
@@ -155,7 +172,7 @@ Future<void> main() async {
 
 ## Output Format
 
-掃描結果會輸出如下 JSON 結構（欄位依實際掃描結果而定）：
+The scan results are output in the following JSON structure (fields vary depending on actual scan results):
 
 ```json
 {
@@ -170,7 +187,7 @@ Future<void> main() async {
   "count": {
     "chromecast": { "total": 1, "rx": 1, "tx": 0 },
     "dlna": { "total": 1, "rx": 1, "tx": 0 },
-    "ariplay": { "total": 3, "rx": 3, "tx": 3 }
+    "airplay": { "total": 3, "rx": 3, "tx": 3 }
   },
   "error": [],
   "status": true
@@ -196,7 +213,12 @@ Each device object contains the following information (sensitive information is 
 }
 ```
 
-## Command Line Example (隱藏敏感資訊)
+**Available Device Types**:
+- `chromecastDongle`, `chromecastAudio` - Chromecast devices
+- `dlnaRenderer`, `dlnaMediaServer` - DLNA devices  
+- `airplayRxVideo`, `airplayRxAudio`, `airplayTx` - AirPlay devices (v1.4.0+)
+
+## Command Line Example (Sensitive Information Hidden)
 
 ```bash
 % dart bin/chromecast_dlna_finder.dart
@@ -205,7 +227,7 @@ Each device object contains the following information (sensitive information is 
   "all": [
     { "name": "***", "ip": "***", "type": "chromecastDongle", ... },
     { "name": "***", "ip": "***", "type": "dlnaRenderer", ... },
-    { "name": "***", "ip": "***", "type": "airplay", ... }
+    { "name": "***", "ip": "***", "type": "airplayRxVideo", ... }
     // ... others ...
   ],
   "chromecast": [ { "name": "***", "ip": "***", ... } ],
@@ -218,7 +240,7 @@ Each device object contains the following information (sensitive information is 
   "count": {
     "chromecast": { "total": 1, "rx": 1, "tx": 0 },
     "dlna": { "total": 1, "rx": 1, "tx": 0 },
-    "ariplay": { "total": 3, "rx": 3, "tx": 3 }
+    "airplay": { "total": 3, "rx": 3, "tx": 3 }
   },
   "error": [],
   "status": true
@@ -226,6 +248,30 @@ Each device object contains the following information (sensitive information is 
 ```
 
 ## Advanced Usage
+
+### AirPlay Device Classification (v1.4.0+)
+
+```dart
+import 'package:chromecast_dlna_finder/chromecast_dlna_finder.dart';
+
+Future<void> main() async {
+  final finder = ChromecastDlnaFinder();
+  final devices = await finder.findDevices(scanDuration: Duration(seconds: 5));
+  
+  for (final device in devices['all'] ?? []) {
+    if (device.isAirplay) {
+      print('AirPlay Device: ${device.name}');
+      print('  Type: ${device.type}');
+      print('  RX Video: ${device.isAirplayRxVideo}');
+      print('  RX Audio: ${device.isAirplayRxAudio}');
+      print('  TX: ${device.isAirplayTx}');
+      print('  mDNS Types: ${device.mdnsTypes}');
+    }
+  }
+  
+  await finder.dispose();
+}
+```
 
 ### Getting Device Control URLs (DLNA Renderers Only)
 
