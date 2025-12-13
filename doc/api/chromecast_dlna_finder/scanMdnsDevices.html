@@ -69,6 +69,8 @@
 <li><span class="parameter" id="scanMdnsDevices-param-sendQueryMessageInterval"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">sendQueryMessageInterval</span> = <span class="default-value">const Duration(seconds: 3)</span>, </span></li>
 <li><span class="parameter" id="scanMdnsDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 15)</span>, </span></li>
 <li><span class="parameter" id="scanMdnsDevices-param-useSystemMdns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">useSystemMdns</span> = <span class="default-value">false</span>, </span></li>
+<li><span class="parameter" id="scanMdnsDevices-param-sharedClient"><span class="type-annotation"><a href="https://pub.dev/documentation/multicast_dns/0.3.3/multicast_dns/MDnsClient-class.html">MDnsClient</a>?</span> <span class="parameter-name">sharedClient</span>, </span></li>
+<li><span class="parameter" id="scanMdnsDevices-param-stopClientOnFinish"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">stopClientOnFinish</span> = <span class="default-value">true</span>, </span></li>
 </ol>})
 
         
@@ -101,12 +103,15 @@
   Duration sendQueryMessageInterval = const Duration(seconds: 3),
   Duration scanDuration = const Duration(seconds: 15), &#47;&#47; 改名為 scanDuration
   bool useSystemMdns = false, &#47;&#47; 新增參數，預設 false
+  MDnsClient? sharedClient, &#47;&#47; 可共享的 client，用於並行 mDNS 掃描
+  bool stopClientOnFinish = true,
 }) async {
   final logger = AppLogger();
   final List&lt;DiscoveredDevice&gt; devices = [];
   final deviceMap = &lt;String, DiscoveredDevice&gt;{};
-  MDnsClient? client;
   logTag ??= &#39;mDNS&#39;;
+  final MDnsClient client = sharedClient ?? createMdnsClient();
+  final bool ownsClient = sharedClient == null;
 
   &#47;&#47; 平台判斷
   bool isApplePlatform = false;
@@ -120,36 +125,7 @@
     throw UnimplementedError(&#39;系統內建 mDNS 尚未實作，請自行擴充&#39;);
   }
 
-  try {
-    client = MDnsClient(
-      rawDatagramSocketFactory: (
-        dynamic host,
-        int port, {
-        bool? reuseAddress,
-        bool? reusePort,
-        int? ttl,
-      }) {
-        return _safeBind(host, port, ttl: ttl);
-      },
-    );
-    await client.start();
-    await logger.info(&#39;info.standard_mdns_port&#39;, tag: logTag);
-  } on SocketException catch (e) {
-    if (e.osError?.errorCode == 48 || e.osError?.errorCode == 10048) {
-      await logger.error(
-        &#39;errors.port_in_use&#39;,
-        tag: logTag,
-        params: {&#39;port&#39;: e.port},
-      );
-      throw MdnsPortInUseException(
-        &#39;mDNS port ￿e.port} is in use, cannot scan for $serviceType devices&#39;,
-      );
-    }
-    rethrow;
-  } catch (e) {
-    await logger.error(&#39;errors.mdns_init_error&#39;, tag: logTag, error: e);
-    rethrow;
-  }
+  await _ensureClientStarted(client, logger, logTag);
 
   final completer = Completer&lt;void&gt;();
   final List&lt;StreamSubscription&gt; subscriptions = [];
@@ -157,12 +133,12 @@
   bool isCompleted = false;
 
   Future&lt;void&gt; sendPtrQuery() async {
-    final ptrStream = client!.lookup&lt;PtrResourceRecord&gt;(
+    final ptrStream = client.lookup&lt;PtrResourceRecord&gt;(
       ResourceRecordQuery.serverPointer(&#39;$serviceType.local&#39;),
     );
     final ptrSubscription = ptrStream.listen((ptr) async {
       final serviceName = ptr.domainName;
-      await for (final srv in client!.lookup&lt;SrvResourceRecord&gt;(
+      await for (final srv in client.lookup&lt;SrvResourceRecord&gt;(
         ResourceRecordQuery.service(serviceName),
       )) {
         await logger.debug(
@@ -260,12 +236,14 @@
     }
     await logger.error(&#39;errors.scan_failed&#39;, tag: logTag, error: e);
   } finally {
-    bool clientStopped = false;
-    if (!clientStopped) {
+    if (stopClientOnFinish &amp;&amp; ownsClient) {
       try {
         client.stop();
       } catch (_) {}
-      clientStopped = true;
+    }
+    if (stopClientOnFinish &amp;&amp; ownsClient) {
+      _mdnsClientStarted[client] = false;
+      _mdnsClientStarting[client] = null;
     }
     periodicQueryTimer?.cancel();
     for (final sub in subscriptions) {

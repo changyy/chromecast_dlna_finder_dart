@@ -56,6 +56,7 @@
       
 <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
 <span class="name ">discoverAllDevices</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="discoverAllDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span>, </span></li>
+<li><span class="parameter" id="discoverAllDevices-param-enableMdns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enableMdns</span> = <span class="default-value">true</span>, </span></li>
 </ol>})
 
       
@@ -73,6 +74,7 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Future&lt;Map&lt;String, List&lt;DiscoveredDevice&gt;&gt;&gt; discoverAllDevices({
   Duration scanDuration = const Duration(seconds: 5),
+  bool enableMdns = true,
 }) async {
   if (_eventController.isClosed) {
     throw StateError(
@@ -93,11 +95,22 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
 
   &#47;&#47; 通知開始整體搜尋
   _safeAddEvent(SearchStartedEvent(&#39;all&#39;, &#39;DiscoveryService&#39;));
+  final bool isApple = Platform.isIOS || Platform.isMacOS;
+  if (enableMdns &amp;&amp; !isApple) {
+    _sharedMdnsClient ??= createMdnsClient();
+  }
+  final mdnsClient = _sharedMdnsClient;
+  final AppleMdnsDiscovery? appleMdns =
+      isApple ? createAppleMdnsDiscovery() : null;
 
   &#47;&#47; 包裝函數：掃描 Chromecast
   Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanChromecastDevicesWithEvents({
     Duration scanDuration = const Duration(seconds: 5),
+    bool stopClientOnFinish = true,
   }) async {
+    if (!enableMdns) return [];
+    if (appleMdns != null) return [];
+    if (mdnsClient == null) return [];
     _safeAddEvent(SearchStartedEvent(&#39;chromecast&#39;, &#39;mDNS&#39;));
     try {
       final devices = await scanChromecastDevices(
@@ -105,6 +118,8 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
           _safeAddEvent(DeviceFoundEvent(device, &#39;mDNS&#39;));
         },
         scanDuration: scanDuration,
+        sharedClient: mdnsClient,
+        stopClientOnFinish: stopClientOnFinish,
       );
       _safeAddEvent(
         SearchCompleteEvent(&#39;chromecast&#39;, devices.length, &#39;mDNS&#39;),
@@ -139,7 +154,11 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
   &#47;&#47; 包裝函數：掃描 AirPlay RX
   Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanAirplayRxDevicesWithEvents({
     Duration scanDuration = const Duration(seconds: 5),
+    bool stopClientOnFinish = true,
   }) async {
+    if (!enableMdns) return [];
+    if (appleMdns != null) return [];
+    if (mdnsClient == null) return [];
     _safeAddEvent(SearchStartedEvent(&#39;airplay_rx&#39;, &#39;mDNS&#39;));
     try {
       final devices = await scanAirplayRxDevices(
@@ -147,6 +166,8 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
           _safeAddEvent(DeviceFoundEvent(device, &#39;mDNS&#39;));
         },
         scanDuration: scanDuration,
+        sharedClient: mdnsClient,
+        stopClientOnFinish: stopClientOnFinish,
       );
       _safeAddEvent(
         SearchCompleteEvent(&#39;airplay_rx&#39;, devices.length, &#39;mDNS&#39;),
@@ -161,7 +182,11 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
   &#47;&#47; 包裝函數：掃描 AirPlay TX
   Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanAirplayTxDevicesWithEvents({
     Duration scanDuration = const Duration(seconds: 5),
+    bool stopClientOnFinish = true,
   }) async {
+    if (!enableMdns) return [];
+    if (appleMdns != null) return [];
+    if (mdnsClient == null) return [];
     _safeAddEvent(SearchStartedEvent(&#39;airplay_tx&#39;, &#39;mDNS&#39;));
     try {
       final devices = await scanAirplayTxDevices(
@@ -169,6 +194,8 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
           _safeAddEvent(DeviceFoundEvent(device, &#39;mDNS&#39;));
         },
         scanDuration: scanDuration,
+        sharedClient: mdnsClient,
+        stopClientOnFinish: stopClientOnFinish,
       );
       _safeAddEvent(
         SearchCompleteEvent(&#39;airplay_tx&#39;, devices.length, &#39;mDNS&#39;),
@@ -181,19 +208,46 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
   }
 
   try {
-    &#47;&#47; 並行掃描 chromecast, dlna, airplay_rx, airplay_tx
-    final chromecastDevicesFuture = scanChromecastDevicesWithEvents(
-      scanDuration: scanDuration,
-    );
+    &#47;&#47; Apple 平台：使用原生 Bonjour mDNS，避免 5353 佔用；其他平台用原有 multicast_dns。
+    List&lt;DiscoveredDevice&gt; appleMdnsDevices = [];
+    if (enableMdns &amp;&amp; appleMdns != null) {
+      _safeAddEvent(SearchStartedEvent(&#39;mdns&#39;, &#39;Bonjour&#39;));
+      appleMdnsDevices = await appleMdns.discover(timeout: scanDuration);
+      _safeAddEvent(
+        SearchCompleteEvent(&#39;mdns&#39;, appleMdnsDevices.length, &#39;Bonjour&#39;),
+      );
+    }
+
+    Future&lt;List&lt;DiscoveredDevice&gt;&gt; chromecastDevicesFuture =
+        scanChromecastDevicesWithEvents(
+          scanDuration: scanDuration,
+          stopClientOnFinish: false,
+        );
+    Future&lt;List&lt;DiscoveredDevice&gt;&gt; airplayRxDevicesFuture =
+        scanAirplayRxDevicesWithEvents(
+          scanDuration: scanDuration,
+          stopClientOnFinish: false,
+        );
+    Future&lt;List&lt;DiscoveredDevice&gt;&gt; airplayTxDevicesFuture =
+        scanAirplayTxDevicesWithEvents(
+          scanDuration: scanDuration,
+          stopClientOnFinish: false,
+        );
+
+    if (enableMdns &amp;&amp; appleMdns != null) {
+      chromecastDevicesFuture = Future.value(
+        appleMdnsDevices.where((d) =&gt; d.isChromecast).toList(),
+      );
+      airplayRxDevicesFuture = Future.value(
+        appleMdnsDevices.where((d) =&gt; d.type == DeviceType.airplay).toList(),
+      );
+      airplayTxDevicesFuture = airplayRxDevicesFuture;
+    }
+
     final dlnaDevicesFuture = scanAllDlnaDevicesWithEvents(
       scanDuration: scanDuration,
     );
-    final airplayRxDevicesFuture = scanAirplayRxDevicesWithEvents(
-      scanDuration: scanDuration,
-    );
-    final airplayTxDevicesFuture = scanAirplayTxDevicesWithEvents(
-      scanDuration: scanDuration,
-    );
+
     final results = await Future.wait([
       chromecastDevicesFuture,
       dlnaDevicesFuture,
@@ -230,6 +284,8 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
       params: {&#39;error&#39;: e.toString()},
     );
     errors.add([&#39;errors.unexpected_scan_error&#39;, e.toString()].join(&#39; &#39;));
+  } finally {
+    &#47;&#47; mDNS client 保留給後續掃描重複使用，避免重複 bind 5353
   }
 
   &#47;&#47; Categorize Chromecast devices by type

@@ -58,6 +58,8 @@
 <span class="name ">scanChromecastDevices</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="scanChromecastDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span></li>
 </ol>)?, </span></li>
 <li><span class="parameter" id="scanChromecastDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span>, </span></li>
+<li><span class="parameter" id="scanChromecastDevices-param-sharedClient"><span class="type-annotation"><a href="https://pub.dev/documentation/multicast_dns/0.3.3/multicast_dns/MDnsClient-class.html">MDnsClient</a>?</span> <span class="parameter-name">sharedClient</span>, </span></li>
+<li><span class="parameter" id="scanChromecastDevices-param-stopClientOnFinish"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">stopClientOnFinish</span> = <span class="default-value">true</span>, </span></li>
 </ol>})
 
         
@@ -76,6 +78,8 @@
   <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanChromecastDevices({
   Function(DiscoveredDevice)? onDeviceFound,
   Duration scanDuration = const Duration(seconds: 5), &#47;&#47; 改名為 scanDuration
+  MDnsClient? sharedClient,
+  bool stopClientOnFinish = true,
 }) async {
   return scanMdnsDevices(
     serviceType: &#39;_googlecast._tcp&#39;,
@@ -97,6 +101,8 @@
     onDeviceFound: onDeviceFound,
     logTag: &#39;mDNS&#39;,
     scanDuration: scanDuration, &#47;&#47; 傳遞 scanDuration
+    sharedClient: sharedClient,
+    stopClientOnFinish: stopClientOnFinish,
   );
 }</code></pre>
 </section>

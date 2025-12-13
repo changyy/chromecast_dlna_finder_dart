@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-  <meta name="description" content="API docs for the scanAirplayRxDevices function from the chromecast_dlna_finder library, for the Dart programming language.">
-  <title>scanAirplayRxDevices function - chromecast_dlna_finder library - Dart API</title>
+  <meta name="description" content="API docs for the createMdnsClient function from the chromecast_dlna_finder library, for the Dart programming language.">
+  <title>createMdnsClient function - chromecast_dlna_finder library - Dart API</title>
 
 
   
@@ -26,9 +26,9 @@
   <ol class="breadcrumbs gt-separated dark hidden-xs">
     <li><a href="../index.html">chromecast_dlna_finder</a></li>
     <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder.dart</a></li>
-    <li class="self-crumb">scanAirplayRxDevices function</li>
+    <li class="self-crumb">createMdnsClient function</li>
   </ol>
-  <div class="self-name">scanAirplayRxDevices</div>
+  <div class="self-name">createMdnsClient</div>
   <form class="search navbar-right" role="search">
     <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
   </form>
@@ -48,61 +48,38 @@
       data-above-sidebar="chromecast_dlna_finder&#47;chromecast_dlna_finder-library-sidebar.html"
       data-below-sidebar="">
       <div>
-<h1><span class="kind-function">scanAirplayRxDevices</span> function 
+<h1><span class="kind-function">createMdnsClient</span> function 
  
 </h1></div>
 
     <section class="multi-line-signature">
         
-<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
-<span class="name ">scanAirplayRxDevices</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="scanAirplayRxDevices-param-onDeviceFound"><span class="type-annotation">dynamic</span> <span class="parameter-name">onDeviceFound</span>(<ol class="parameter-list single-line"> <li><span class="parameter" id="param-"><span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span></span></li>
-</ol>)?, </span></li>
-<li><span class="parameter" id="scanAirplayRxDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span>, </span></li>
-<li><span class="parameter" id="scanAirplayRxDevices-param-sharedClient"><span class="type-annotation"><a href="https://pub.dev/documentation/multicast_dns/0.3.3/multicast_dns/MDnsClient-class.html">MDnsClient</a>?</span> <span class="parameter-name">sharedClient</span>, </span></li>
-<li><span class="parameter" id="scanAirplayRxDevices-param-stopClientOnFinish"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">stopClientOnFinish</span> = <span class="default-value">true</span>, </span></li>
-</ol>})
+<span class="returntype"><a href="https://pub.dev/documentation/multicast_dns/0.3.3/multicast_dns/MDnsClient-class.html">MDnsClient</a></span>
+<span class="name ">createMdnsClient</span>(<wbr>)
 
         
 
     </section>
     
 <section class="desc markdown">
-  <p>Scan for AirPlay RX (接收端, 如 Apple TV, 支援 AirPlay RX 的 Mac/iOS)</p>
+  <p>Create an mDNS client with a socket factory that enables port reuse.</p>
 </section>
 
 
     
 <section class="summary source-code" id="source">
   <h2><span>Implementation</span></h2>
-  <pre class="language-dart"><code class="language-dart">Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanAirplayRxDevices({
-  Function(DiscoveredDevice)? onDeviceFound,
-  Duration scanDuration = const Duration(seconds: 5), &#47;&#47; 改名為 scanDuration
-  MDnsClient? sharedClient,
-  bool stopClientOnFinish = true,
-}) async {
-  return scanMdnsDevices(
-    serviceType: &#39;_airplay._tcp&#39;,
-    mdnsType: &#39;_airplay._tcp&#39;,
-    deviceFactory: ({
-      required ip,
-      required port,
-      required String serviceName,
-      required txtMap,
-      List&lt;String&gt;? mdnsTypes,
+  <pre class="language-dart"><code class="language-dart">MDnsClient createMdnsClient() {
+  return MDnsClient(
+    rawDatagramSocketFactory: (
+      dynamic host,
+      int port, {
+      bool? reuseAddress,
+      bool? reusePort,
+      int? ttl,
     }) {
-      return DiscoveredDevice.fromAirplay(
-        ip: ip,
-        port: port,
-        serviceName: serviceName,
-        txtMap: txtMap,
-        mdnsTypes: mdnsTypes,
-      );
+      return _safeBind(host, port, ttl: ttl);
     },
-    onDeviceFound: onDeviceFound,
-    logTag: &#39;mDNS&#39;,
-    scanDuration: scanDuration, &#47;&#47; 傳遞 scanDuration
-    sharedClient: sharedClient,
-    stopClientOnFinish: stopClientOnFinish,
   );
 }</code></pre>
 </section>
@@ -119,7 +96,7 @@
 <ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
     <li><a href="../index.html">chromecast_dlna_finder</a></li>
     <li><a href="../chromecast_dlna_finder/">chromecast_dlna_finder</a></li>
-    <li class="self-crumb">scanAirplayRxDevices function</li>
+    <li class="self-crumb">createMdnsClient function</li>
 </ol>
 
     <h5>chromecast_dlna_finder library</h5>

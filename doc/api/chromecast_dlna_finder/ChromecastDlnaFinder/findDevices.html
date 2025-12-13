@@ -56,6 +56,7 @@
       
 <span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/Map-class.html">Map</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span>, <span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>&gt;</span></span>
 <span class="name ">findDevices</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="findDevices-param-scanDuration"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/Duration-class.html">Duration</a></span> <span class="parameter-name">scanDuration</span> = <span class="default-value">const Duration(seconds: 5)</span>, </span></li>
+<li><span class="parameter" id="findDevices-param-enableMdns"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/bool-class.html">bool</a></span> <span class="parameter-name">enableMdns</span> = <span class="default-value">true</span>, </span></li>
 </ol>})
 
       
@@ -72,9 +73,11 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Future&lt;Map&lt;String, List&lt;DiscoveredDevice&gt;&gt;&gt; findDevices({
   Duration scanDuration = const Duration(seconds: 5),
+  bool enableMdns = true,
 }) async {
   final result = await _discoveryService.discoverAllDevices(
     scanDuration: scanDuration,
+    enableMdns: enableMdns,
   );
   return result;
 }</code></pre>
