@@ -26,8 +26,15 @@ Or manually add it to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  chromecast_dlna_finder: ^1.4.0
+  chromecast_dlna_finder: ^1.5.0
 ```
+
+## What's new in v1.5.0
+
+- mDNS 掃描改用共用 `MDnsClient`（避免重複 bind 5353），Apple 平台則透過 Flutter MethodChannel (Bonjour) 查詢。
+- 移除原生 `native_mdns_scanner` / FFI 二進位依賴，發佈體積更小，Flutter 專案需確保已加入本套件提供的 MethodChannel plug-in。
+- API 仍維持 v1.4 的 AirPlay 3 型別（RX Video / RX Audio / TX）與對應的 `isAirplay*` 判斷，保持既有相容性。
+- `findDevices`/`findDevicesAsJson*` 新增 `enableMdns` 參數，方便在受限網路環境下暫停 mDNS。
 
 ## ⚠️ Breaking Changes in v1.4.0
 

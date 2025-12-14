@@ -96,12 +96,19 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
   &#47;&#47; 通知開始整體搜尋
   _safeAddEvent(SearchStartedEvent(&#39;all&#39;, &#39;DiscoveryService&#39;));
   final bool isApple = Platform.isIOS || Platform.isMacOS;
-  if (enableMdns &amp;&amp; !isApple) {
+
+  &#47;&#47; Apple 平台：若有 Flutter 環境則走 MethodChannel，否則回退到 multicast_dns。
+  final AppleMdnsDiscovery? appleMdnsCandidate =
+      isApple ? createAppleMdnsDiscovery() : null;
+  final AppleMdnsDiscovery? appleMdns =
+      (appleMdnsCandidate?.isApplePlatform ?? false)
+          ? appleMdnsCandidate
+          : null;
+
+  if (enableMdns &amp;&amp; (appleMdns == null)) {
     _sharedMdnsClient ??= createMdnsClient();
   }
   final mdnsClient = _sharedMdnsClient;
-  final AppleMdnsDiscovery? appleMdns =
-      isApple ? createAppleMdnsDiscovery() : null;
 
   &#47;&#47; 包裝函數：掃描 Chromecast
   Future&lt;List&lt;DiscoveredDevice&gt;&gt; scanChromecastDevicesWithEvents({
@@ -239,9 +246,11 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
         appleMdnsDevices.where((d) =&gt; d.isChromecast).toList(),
       );
       airplayRxDevicesFuture = Future.value(
-        appleMdnsDevices.where((d) =&gt; d.type == DeviceType.airplay).toList(),
+        appleMdnsDevices.where((d) =&gt; d.isAirplayRx).toList(),
       );
-      airplayTxDevicesFuture = airplayRxDevicesFuture;
+      airplayTxDevicesFuture = Future.value(
+        appleMdnsDevices.where((d) =&gt; d.isAirplayTx).toList(),
+      );
     }
 
     final dlnaDevicesFuture = scanAllDlnaDevicesWithEvents(
@@ -391,7 +400,7 @@ Including Chromecast and DLNA (Renderer and Media Server)</p>
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.4.0
+      1.5.0
   </span>
   
 </footer>

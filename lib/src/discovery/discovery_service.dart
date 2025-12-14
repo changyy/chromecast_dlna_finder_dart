@@ -85,12 +85,19 @@ class DiscoveryService {
     // 通知開始整體搜尋
     _safeAddEvent(SearchStartedEvent('all', 'DiscoveryService'));
     final bool isApple = Platform.isIOS || Platform.isMacOS;
-    if (enableMdns && !isApple) {
+
+    // Apple 平台：若有 Flutter 環境則走 MethodChannel，否則回退到 multicast_dns。
+    final AppleMdnsDiscovery? appleMdnsCandidate =
+        isApple ? createAppleMdnsDiscovery() : null;
+    final AppleMdnsDiscovery? appleMdns =
+        (appleMdnsCandidate?.isApplePlatform ?? false)
+            ? appleMdnsCandidate
+            : null;
+
+    if (enableMdns && (appleMdns == null)) {
       _sharedMdnsClient ??= createMdnsClient();
     }
     final mdnsClient = _sharedMdnsClient;
-    final AppleMdnsDiscovery? appleMdns =
-        isApple ? createAppleMdnsDiscovery() : null;
 
     // 包裝函數：掃描 Chromecast
     Future<List<DiscoveredDevice>> scanChromecastDevicesWithEvents({
