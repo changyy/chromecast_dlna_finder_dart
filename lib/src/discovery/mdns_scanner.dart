@@ -12,6 +12,21 @@ class MdnsPortInUseException implements Exception {
   String toString() => 'MdnsPortInUseException: $message';
 }
 
+/// Create an mDNS client with a socket factory that enables port reuse.
+MDnsClient createMdnsClient() {
+  return MDnsClient(
+    rawDatagramSocketFactory: (
+      dynamic host,
+      int port, {
+      bool? reuseAddress,
+      bool? reusePort,
+      int? ttl,
+    }) {
+      return _safeBind(host, port, ttl: ttl);
+    },
+  );
+}
+
 /// 共用 mDNS 掃描器
 Future<List<DiscoveredDevice>> scanMdnsDevices({
   required String
@@ -31,12 +46,15 @@ Future<List<DiscoveredDevice>> scanMdnsDevices({
   Duration sendQueryMessageInterval = const Duration(seconds: 3),
   Duration scanDuration = const Duration(seconds: 15), // 改名為 scanDuration
   bool useSystemMdns = false, // 新增參數，預設 false
+  MDnsClient? sharedClient, // 可共享的 client，用於並行 mDNS 掃描
+  bool stopClientOnFinish = true,
 }) async {
   final logger = AppLogger();
   final List<DiscoveredDevice> devices = [];
   final deviceMap = <String, DiscoveredDevice>{};
-  MDnsClient? client;
   logTag ??= 'mDNS';
+  final MDnsClient client = sharedClient ?? createMdnsClient();
+  final bool ownsClient = sharedClient == null;
 
   // 平台判斷
   bool isApplePlatform = false;
@@ -50,36 +68,7 @@ Future<List<DiscoveredDevice>> scanMdnsDevices({
     throw UnimplementedError('系統內建 mDNS 尚未實作，請自行擴充');
   }
 
-  try {
-    client = MDnsClient(
-      rawDatagramSocketFactory: (
-        dynamic host,
-        int port, {
-        bool? reuseAddress,
-        bool? reusePort,
-        int? ttl,
-      }) {
-        return _safeBind(host, port, ttl: ttl);
-      },
-    );
-    await client.start();
-    await logger.info('info.standard_mdns_port', tag: logTag);
-  } on SocketException catch (e) {
-    if (e.osError?.errorCode == 48 || e.osError?.errorCode == 10048) {
-      await logger.error(
-        'errors.port_in_use',
-        tag: logTag,
-        params: {'port': e.port},
-      );
-      throw MdnsPortInUseException(
-        'mDNS port ￿e.port} is in use, cannot scan for $serviceType devices',
-      );
-    }
-    rethrow;
-  } catch (e) {
-    await logger.error('errors.mdns_init_error', tag: logTag, error: e);
-    rethrow;
-  }
+  await _ensureClientStarted(client, logger, logTag);
 
   final completer = Completer<void>();
   final List<StreamSubscription> subscriptions = [];
@@ -87,12 +76,12 @@ Future<List<DiscoveredDevice>> scanMdnsDevices({
   bool isCompleted = false;
 
   Future<void> sendPtrQuery() async {
-    final ptrStream = client!.lookup<PtrResourceRecord>(
+    final ptrStream = client.lookup<PtrResourceRecord>(
       ResourceRecordQuery.serverPointer('$serviceType.local'),
     );
     final ptrSubscription = ptrStream.listen((ptr) async {
       final serviceName = ptr.domainName;
-      await for (final srv in client!.lookup<SrvResourceRecord>(
+      await for (final srv in client.lookup<SrvResourceRecord>(
         ResourceRecordQuery.service(serviceName),
       )) {
         await logger.debug(
@@ -190,12 +179,14 @@ Future<List<DiscoveredDevice>> scanMdnsDevices({
     }
     await logger.error('errors.scan_failed', tag: logTag, error: e);
   } finally {
-    bool clientStopped = false;
-    if (!clientStopped) {
+    if (stopClientOnFinish && ownsClient) {
       try {
         client.stop();
       } catch (_) {}
-      clientStopped = true;
+    }
+    if (stopClientOnFinish && ownsClient) {
+      _mdnsClientStarted[client] = false;
+      _mdnsClientStarting[client] = null;
     }
     periodicQueryTimer?.cancel();
     for (final sub in subscriptions) {
@@ -216,6 +207,8 @@ Future<List<DiscoveredDevice>> scanMdnsDevices({
 Future<List<DiscoveredDevice>> scanChromecastDevices({
   Function(DiscoveredDevice)? onDeviceFound,
   Duration scanDuration = const Duration(seconds: 5), // 改名為 scanDuration
+  MDnsClient? sharedClient,
+  bool stopClientOnFinish = true,
 }) async {
   return scanMdnsDevices(
     serviceType: '_googlecast._tcp',
@@ -237,6 +230,8 @@ Future<List<DiscoveredDevice>> scanChromecastDevices({
     onDeviceFound: onDeviceFound,
     logTag: 'mDNS',
     scanDuration: scanDuration, // 傳遞 scanDuration
+    sharedClient: sharedClient,
+    stopClientOnFinish: stopClientOnFinish,
   );
 }
 
@@ -244,6 +239,8 @@ Future<List<DiscoveredDevice>> scanChromecastDevices({
 Future<List<DiscoveredDevice>> scanAirplayRxDevices({
   Function(DiscoveredDevice)? onDeviceFound,
   Duration scanDuration = const Duration(seconds: 5), // 改名為 scanDuration
+  MDnsClient? sharedClient,
+  bool stopClientOnFinish = true,
 }) async {
   return scanMdnsDevices(
     serviceType: '_airplay._tcp',
@@ -266,6 +263,8 @@ Future<List<DiscoveredDevice>> scanAirplayRxDevices({
     onDeviceFound: onDeviceFound,
     logTag: 'mDNS',
     scanDuration: scanDuration, // 傳遞 scanDuration
+    sharedClient: sharedClient,
+    stopClientOnFinish: stopClientOnFinish,
   );
 }
 
@@ -273,6 +272,8 @@ Future<List<DiscoveredDevice>> scanAirplayRxDevices({
 Future<List<DiscoveredDevice>> scanAirplayTxDevices({
   Function(DiscoveredDevice)? onDeviceFound,
   Duration scanDuration = const Duration(seconds: 5), // 改名為 scanDuration
+  MDnsClient? sharedClient,
+  bool stopClientOnFinish = true,
 }) async {
   return scanMdnsDevices(
     serviceType: '_companion-link._tcp',
@@ -295,11 +296,14 @@ Future<List<DiscoveredDevice>> scanAirplayTxDevices({
     onDeviceFound: onDeviceFound,
     logTag: 'mDNS',
     scanDuration: scanDuration, // 傳遞 scanDuration
+    sharedClient: sharedClient,
+    stopClientOnFinish: stopClientOnFinish,
   );
 }
 
 /// 安全嘗試 bind，所有平台都先嘗試 reusePort，失敗再 fallback
 Future<RawDatagramSocket> _safeBind(dynamic host, int port, {int? ttl}) async {
+  ttl ??= 255;
   try {
     // 先嘗試帶 reusePort
     return await RawDatagramSocket.bind(
@@ -307,7 +311,7 @@ Future<RawDatagramSocket> _safeBind(dynamic host, int port, {int? ttl}) async {
       port,
       reuseAddress: true,
       reusePort: true,
-      ttl: ttl ?? 1,
+      ttl: ttl,
     );
   } catch (e) {
     // fallback: 不支援 reusePort 或權限不足
@@ -316,7 +320,19 @@ Future<RawDatagramSocket> _safeBind(dynamic host, int port, {int? ttl}) async {
         host,
         port,
         reuseAddress: true,
-        ttl: ttl ?? 1,
+        reusePort: true,
+        ttl: ttl,
+      );
+    } catch (_) {}
+
+    try {
+      // 嘗試僅開啟 reusePort，避免 reuseAddress 衝突
+      return await RawDatagramSocket.bind(
+        host,
+        port,
+        reuseAddress: false,
+        reusePort: true,
+        ttl: ttl,
       );
     } catch (e2) {
       // 針對權限錯誤給出提示
@@ -325,9 +341,56 @@ Future<RawDatagramSocket> _safeBind(dynamic host, int port, {int? ttl}) async {
           'Failed to bind mDNS port 5353. Please ensure you have sufficient permissions (e.g., run as root or administrator).',
         );
       }
+      if (e2 is SocketException &&
+          (e2.osError?.errorCode == 48 || e2.osError?.errorCode == 10048)) {
+        throw MdnsPortInUseException(
+          'mDNS port ${e2.port} is in use, cannot bind socket',
+        );
+      }
       rethrow;
     }
   }
+}
+
+final _mdnsClientStarted = Expando<bool>();
+final _mdnsClientStarting = Expando<Future<void>>();
+
+Future<void> _ensureClientStarted(
+  MDnsClient client,
+  AppLogger logger,
+  String logTag,
+) async {
+  if (_mdnsClientStarted[client] == true) return;
+  if (_mdnsClientStarting[client] != null) {
+    await _mdnsClientStarting[client];
+    return;
+  }
+  final future = () async {
+    try {
+      await client.start();
+      _mdnsClientStarted[client] = true;
+      await logger.info('info.standard_mdns_port', tag: logTag);
+    } on SocketException catch (e) {
+      if (e.osError?.errorCode == 48 || e.osError?.errorCode == 10048) {
+        await logger.error(
+          'errors.port_in_use',
+          tag: logTag,
+          params: {'port': e.port},
+        );
+        throw MdnsPortInUseException(
+          'mDNS port ${e.port} is in use, cannot scan for services',
+        );
+      }
+      rethrow;
+    } catch (e) {
+      await logger.error('errors.mdns_init_error', tag: logTag, error: e);
+      rethrow;
+    } finally {
+      _mdnsClientStarting[client] = null;
+    }
+  }();
+  _mdnsClientStarting[client] = future;
+  await future;
 }
 
 /// Parse TXT record, fill results into txtMap

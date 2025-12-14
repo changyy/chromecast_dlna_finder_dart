@@ -71,6 +71,9 @@
   <h2><span>Implementation</span></h2>
   <pre class="language-dart"><code class="language-dart">Future&lt;void&gt; dispose() async {
   await _eventController.close();
+  try {
+    _sharedMdnsClient?.stop();
+  } catch (_) {}
 }</code></pre>
 </section>
 
