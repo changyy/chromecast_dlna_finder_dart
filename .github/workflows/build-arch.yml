@@ -49,11 +49,11 @@ jobs:
             cross_compile: false
           
           # macOS builds - both architectures
-          - os: macos-13    # Intel x86_64
-            output_name: chromecast_dlna_finder_macos_amd64
-            asset_name: chromecast_dlna_finder_macos_amd64
-            arch: amd64
-            cross_compile: false
+          #- os: macos-13    # Intel x86_64
+          #  output_name: chromecast_dlna_finder_macos_amd64
+          #  asset_name: chromecast_dlna_finder_macos_amd64
+          #  arch: amd64
+          #  cross_compile: false
           - os: macos-14    # Apple Silicon arm64
             output_name: chromecast_dlna_finder_macos_arm64
             asset_name: chromecast_dlna_finder_macos_arm64
@@ -78,12 +78,28 @@ jobs:
         if: matrix.use_docker == true
         run: |
           docker run --platform linux/arm64 --rm -v ${{ github.workspace }}:/app -w /app dart:stable \
-          bash -c "dart pub get && dart compile exe bin/chromecast_dlna_finder.dart -o ${{ matrix.output_name }}"
+          bash -c "set -eo pipefail; \
+          if dart pub get; then \
+            echo 'dart pub get succeeded'; \
+          else \
+            echo 'dart pub get failed; installing Flutter and retrying with flutter pub get...'; \
+            git clone --depth 1 -b stable https://github.com/flutter/flutter.git /tmp/flutter; \
+            export PATH=/tmp/flutter/bin:\$PATH; \
+            flutter config --no-analytics; \
+            flutter pub get; \
+          fi; \
+          dart compile exe bin/chromecast_dlna_finder.dart -o ${{ matrix.output_name }}"
 
       # For non-Docker builds, use the standard approach
       - name: Setup Dart (non-Docker)
         if: matrix.use_docker != true
         uses: dart-lang/setup-dart@v1.6.0
+      
+      - name: Setup Flutter (non-Docker, for fallback on x64)
+        if: matrix.use_docker != true && matrix.arch == 'amd64'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
       
       - name: Get version
         id: get_version
@@ -106,7 +122,26 @@ jobs:
       
       - name: Install dependencies (non-Docker)
         if: matrix.use_docker != true
-        run: dart pub get
+        run: |
+          set -eo pipefail
+          if dart pub get; then
+            echo "dart pub get succeeded"
+          else
+            echo "dart pub get failed; retrying with flutter pub get..."
+            if command -v flutter >/dev/null 2>&1; then
+              echo "Found flutter from setup step."
+            else
+              echo "Flutter not preset; installing lightweight clone..."
+              FLUTTER_HOME="$HOME/flutter-sdk"
+              if [ ! -d "$FLUTTER_HOME" ]; then
+                git clone --depth 1 -b stable https://github.com/flutter/flutter.git "$FLUTTER_HOME"
+              fi
+              export PATH="$FLUTTER_HOME/bin:$PATH"
+              flutter config --no-analytics
+            fi
+            flutter pub get
+          fi
+        shell: bash
       
       - name: Check for files in pubspec
         id: check_files
