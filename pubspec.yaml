@@ -10,6 +10,8 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  flutter:
+    sdk: flutter
   xml: ^6.5.0
   multicast_dns: ^0.3.3
   args: ^2.7.0

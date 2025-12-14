@@ -1,3 +1,11 @@
+## 1.5.0
+
+- Reused a shared `MDnsClient` for mDNS scanning to avoid multiple bindings to port 5353; on Apple platforms, mDNS results now come via a Flutter MethodChannel (Bonjour).
+- Removed `native_mdns_scanner` and bundled FFI binaries to shrink the package; cross-platform scanning now relies on Dart and the MethodChannel path.
+- Kept the v1.4 AirPlay three-type enum (`airplayRxVideo`/`airplayRxAudio`/`airplayTx`) and `isAirplay*` helpers to preserve API compatibility.
+- Added an `enableMdns` parameter to `findDevices` and `findDevicesAsJson*` to let users skip mDNS in restricted network environments.
+- Added a `flutter` SDK dependency in `pubspec.yaml` to support the MethodChannel; pure Dart still uses `multicast_dns`/stub and does not touch Flutter APIs.
+
 ## 1.4.0
 
 - **BREAKING CHANGE**: Simplified AirPlay device type enum from 5 types to 3 types for cleaner classification:
@@ -12,13 +20,6 @@
 - Improved AirPlay device getter methods (`isAirplayTx`, `isAirplay`, `isAirplayRx`) to work with simplified enum structure
 - All existing `isAirplay` checks continue to work, maintaining backward compatibility for device detection logic
 - Updated device classification logic to be more straightforward and maintainable
-
-## 1.5.0
-
-- mDNS 掃描改為共用 `MDnsClient`，避免多路掃描時重複綁定 5353；Apple 平台改用 Flutter MethodChannel (Bonjour) 取得 mDNS 結果。
-- 移除 `native_mdns_scanner` 與隨附 FFI 二進位，減少封包體積，跨平台以 Dart 與 MethodChannel 為主。
-- 保留 v1.4 的 AirPlay 三型別 (`airplayRxVideo`/`airplayRxAudio`/`airplayTx`) 與 `isAirplay*` 判斷，維持既有 API 相容。
-- `findDevices` / `findDevicesAsJson*` 加入 `enableMdns` 參數，方便在受限網路環境下跳過 mDNS。
 
 ## 1.3.0
 
