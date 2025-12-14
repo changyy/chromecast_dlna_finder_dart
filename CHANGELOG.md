@@ -1,3 +1,7 @@
+## 1.5.1
+
+- Documentation refresh: updated README and related docs to align with the new mDNS/MethodChannel flow and recent API parameters.
+
 ## 1.5.0
 
 - Reused a shared `MDnsClient` for mDNS scanning to avoid multiple bindings to port 5353; on Apple platforms, mDNS results now come via a Flutter MethodChannel (Bonjour).
