@@ -66,10 +66,10 @@
 </code></pre>
 <h2 id="whats-new-in-v150">What's new in v1.5.0</h2>
 <ul>
-<li>mDNS 掃描改用共用 <code>MDnsClient</code>（避免重複 bind 5353），Apple 平台則透過 Flutter MethodChannel (Bonjour) 查詢。</li>
-<li>移除原生 <code>native_mdns_scanner</code> / FFI 二進位依賴，發佈體積更小，Flutter 專案需確保已加入本套件提供的 MethodChannel plug-in。</li>
-<li>API 仍維持 v1.4 的 AirPlay 3 型別（RX Video / RX Audio / TX）與對應的 <code>isAirplay*</code> 判斷，保持既有相容性。</li>
-<li><code>findDevices</code>/<code>findDevicesAsJson*</code> 新增 <code>enableMdns</code> 參數，方便在受限網路環境下暫停 mDNS。</li>
+<li>Reused a shared <code>MDnsClient</code> for mDNS scanning to avoid multiple bindings to port 5353; on Apple platforms, mDNS results now come via a Flutter MethodChannel (Bonjour).</li>
+<li>Removed the native <code>native_mdns_scanner</code>/FFI binaries to reduce package size; Flutter apps should include this package's MethodChannel plugin.</li>
+<li>API keeps the v1.4 AirPlay three-type enum (RX Video / RX Audio / TX) and <code>isAirplay*</code> helpers for compatibility.</li>
+<li>Added an <code>enableMdns</code> parameter to <code>findDevices</code>/<code>findDevicesAsJson*</code> to let you pause mDNS in restricted networks.</li>
 </ul>
 <h2 id="-breaking-changes-in-v140">⚠️ Breaking Changes in v1.4.0</h2>
 <p><strong>AirPlay Device Type Simplification</strong>: The AirPlay device type enumeration has been simplified from 5 types to 3 types for cleaner classification:</p>
@@ -376,7 +376,7 @@ dart test test/scanners_mock_test.dart --reporter expanded
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.5.0
+      1.5.2
   </span>
   
 </footer>

@@ -54,7 +54,7 @@
 
     <section class="multi-line-signature">
         
-<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-core/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="https://api.flutter.dev/flutter/dart-core/List-class.html">List</a><span class="signature">&lt;<wbr><span class="type-parameter"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span>&gt;</span></span>&gt;</span></span>
 <span class="name ">scanMdnsDevices</span>(<wbr>{<ol class="parameter-list"> <li><span class="parameter" id="scanMdnsDevices-param-serviceType"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">serviceType</span>, </span></li>
 <li><span class="parameter" id="scanMdnsDevices-param-mdnsType"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">mdnsType</span>, </span></li>
 <li><span class="parameter" id="scanMdnsDevices-param-deviceFactory"><span>required</span> <span class="type-annotation"><a href="../chromecast_dlna_finder/DiscoveredDevice-class.html">DiscoveredDevice</a></span> <span class="parameter-name">deviceFactory</span>({<ol class="parameter-list"> <li><span class="parameter" id="param-ip"><span>required</span> <span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">ip</span>, </span></li>
@@ -130,99 +130,147 @@
   final completer = Completer&lt;void&gt;();
   final List&lt;StreamSubscription&gt; subscriptions = [];
   Timer? periodicQueryTimer;
+  Timer? scanTimer;
   bool isCompleted = false;
 
-  Future&lt;void&gt; sendPtrQuery() async {
-    final ptrStream = client.lookup&lt;PtrResourceRecord&gt;(
-      ResourceRecordQuery.serverPointer(&#39;$serviceType.local&#39;),
-    );
-    final ptrSubscription = ptrStream.listen((ptr) async {
-      final serviceName = ptr.domainName;
-      await for (final srv in client.lookup&lt;SrvResourceRecord&gt;(
-        ResourceRecordQuery.service(serviceName),
-      )) {
-        await logger.debug(
-          &#39;debug.found_service&#39;,
-          tag: logTag,
-          params: {
-            &#39;target&#39;: srv.target,
-            &#39;port&#39;: srv.port,
-            &#39;priority&#39;: srv.priority,
-            &#39;weight&#39;: srv.weight,
-          },
-        );
-        await for (final ip in client.lookup&lt;IPAddressResourceRecord&gt;(
-          ResourceRecordQuery.addressIPv4(srv.target),
-        )) {
-          await for (final txt in client.lookup&lt;TxtResourceRecord&gt;(
-            ResourceRecordQuery.text(serviceName),
-          )) {
-            final txtMap = &lt;String, String&gt;{};
-            final dynamic txtRaw = txt.text;
-            await _parseTxtRecord(txtRaw, txtMap, logger);
+  &#47;&#47; Ends the scan early, e.g. when the (shared) client was stopped elsewhere.
+  void finishScan() {
+    if (!completer.isCompleted) completer.complete();
+  }
 
-            final device = deviceFactory(
-              ip: ip.address.address,
-              port: srv.port,
-              serviceName: serviceName,
-              txtMap: txtMap,
-              mdnsTypes: [mdnsType],
-            );
-            final deviceId =
-                &#39;${mdnsType}_${(device.id ?? device.location ?? &quot;${device.ip}_${device.name}&quot;)}&#39;;
-            if (deviceMap.containsKey(deviceId)) {
-              await logger.debug(
-                &#39;debug.duplicate_device&#39;,
-                tag: logTag,
-                params: {&#39;id&#39;: deviceId, &#39;name&#39;: device.name, &#39;ip&#39;: device.ip},
-              );
-              continue;
-            }
-            deviceMap[deviceId] = device;
-            await logger.info(
-              &#39;info.found_device&#39;,
+  &#47;&#47; A lookup that never throws: once the scan is over or the client has been
+  &#47;&#47; stopped (by us, by another scan sharing the client, or by dispose()),
+  &#47;&#47; MDnsClient.lookup throws a StateError — synchronously, and nothing awaits
+  &#47;&#47; these nested lookups, so it used to surface as an uncaught app crash.
+  Stream&lt;T&gt; safeLookup&lt;T extends ResourceRecord&gt;(ResourceRecordQuery query) {
+    if (isCompleted) return const Stream.empty();
+    try {
+      return client.lookup&lt;T&gt;(query).handleError((Object e) {
+        logger.debug(
+          &#39;debug.lookup_after_stop&#39;,
+          tag: logTag,
+          params: {&#39;error&#39;: e.toString()},
+        );
+      }, test: (e) =&gt; e is StateError);
+    } on StateError catch (e) {
+      logger.debug(
+        &#39;debug.lookup_after_stop&#39;,
+        tag: logTag,
+        params: {&#39;error&#39;: e.toString()},
+      );
+      _mdnsClientStarted[client] = false;
+      finishScan();
+      return const Stream.empty();
+    }
+  }
+
+  Future&lt;void&gt; resolveService(String serviceName) async {
+    await for (final srv in safeLookup&lt;SrvResourceRecord&gt;(
+      ResourceRecordQuery.service(serviceName),
+    )) {
+      if (isCompleted) return;
+      await logger.debug(
+        &#39;debug.found_service&#39;,
+        tag: logTag,
+        params: {
+          &#39;target&#39;: srv.target,
+          &#39;port&#39;: srv.port,
+          &#39;priority&#39;: srv.priority,
+          &#39;weight&#39;: srv.weight,
+        },
+      );
+      await for (final ip in safeLookup&lt;IPAddressResourceRecord&gt;(
+        ResourceRecordQuery.addressIPv4(srv.target),
+      )) {
+        if (isCompleted) return;
+        await for (final txt in safeLookup&lt;TxtResourceRecord&gt;(
+          ResourceRecordQuery.text(serviceName),
+        )) {
+          if (isCompleted) return;
+          final txtMap = &lt;String, String&gt;{};
+          final dynamic txtRaw = txt.text;
+          await _parseTxtRecord(txtRaw, txtMap, logger);
+
+          final device = deviceFactory(
+            ip: ip.address.address,
+            port: srv.port,
+            serviceName: serviceName,
+            txtMap: txtMap,
+            mdnsTypes: [mdnsType],
+          );
+          final deviceId =
+              &#39;${mdnsType}_${(device.id ?? device.location ?? &quot;${device.ip}_${device.name}&quot;)}&#39;;
+          if (deviceMap.containsKey(deviceId)) {
+            await logger.debug(
+              &#39;debug.duplicate_device&#39;,
               tag: logTag,
-              params: {
-                &#39;deviceType&#39;: device.type.toString(),
-                &#39;name&#39;: device.name,
-                &#39;ip&#39;: device.ip,
-                &#39;model&#39;: device.model,
-              },
+              params: {&#39;id&#39;: deviceId, &#39;name&#39;: device.name, &#39;ip&#39;: device.ip},
             );
-            if (onDeviceFound != null) {
-              onDeviceFound(device);
-            }
+            continue;
+          }
+          &#47;&#47; The scan may have finished while we were awaiting the logger.
+          if (isCompleted) return;
+          deviceMap[deviceId] = device;
+          await logger.info(
+            &#39;info.found_device&#39;,
+            tag: logTag,
+            params: {
+              &#39;deviceType&#39;: device.type.toString(),
+              &#39;name&#39;: device.name,
+              &#39;ip&#39;: device.ip,
+              &#39;model&#39;: device.model,
+            },
+          );
+          if (onDeviceFound != null &amp;&amp; !isCompleted) {
+            onDeviceFound(device);
           }
         }
       }
-    });
+    }
+  }
+
+  void sendPtrQuery() {
+    if (isCompleted) return;
+    final ptrSubscription = safeLookup&lt;PtrResourceRecord&gt;(
+      ResourceRecordQuery.serverPointer(&#39;$serviceType.local&#39;),
+    ).listen(
+      (ptr) {
+        &#47;&#47; Not awaited by anyone: every error has to be handled here.
+        resolveService(ptr.domainName).catchError((Object e) {
+          logger.debug(
+            &#39;debug.lookup_after_stop&#39;,
+            tag: logTag,
+            params: {&#39;error&#39;: e.toString()},
+          );
+        });
+      },
+      onError: (Object e) {
+        logger.debug(
+          &#39;debug.lookup_after_stop&#39;,
+          tag: logTag,
+          params: {&#39;error&#39;: e.toString()},
+        );
+      },
+    );
     subscriptions.add(ptrSubscription);
   }
 
   try {
     &#47;&#47; 首次查詢
-    await sendPtrQuery();
+    sendPtrQuery();
     &#47;&#47; 週期性查詢
     periodicQueryTimer = Timer.periodic(sendQueryMessageInterval, (timer) {
-      if (isCompleted) return;
+      if (isCompleted) {
+        timer.cancel();
+        return;
+      }
       sendPtrQuery();
     });
 
     &#47;&#47; Wait for scanDuration to complete (DLNA style)
-    Future.delayed(scanDuration, () {
-      if (!completer.isCompleted) completer.complete();
-    });
+    scanTimer = Timer(scanDuration, finishScan);
 
-    try {
-      await completer.future;
-    } catch (e) {
-      rethrow;
-    }
-    isCompleted = true;
-    periodicQueryTimer.cancel();
-    for (final sub in subscriptions) {
-      await sub.cancel();
-    }
+    await completer.future;
   } catch (e) {
     if (e is SocketException &amp;&amp; e.osError?.errorCode == 1) {
       await logger.error(
@@ -236,18 +284,14 @@
     }
     await logger.error(&#39;errors.scan_failed&#39;, tag: logTag, error: e);
   } finally {
-    if (stopClientOnFinish &amp;&amp; ownsClient) {
-      try {
-        client.stop();
-      } catch (_) {}
-    }
-    if (stopClientOnFinish &amp;&amp; ownsClient) {
-      _mdnsClientStarted[client] = false;
-      _mdnsClientStarting[client] = null;
-    }
+    isCompleted = true;
     periodicQueryTimer?.cancel();
+    scanTimer?.cancel();
     for (final sub in subscriptions) {
       await sub.cancel();
+    }
+    if (stopClientOnFinish &amp;&amp; ownsClient) {
+      stopMdnsClient(client);
     }
   }
   devices.addAll(deviceMap.values);
@@ -284,7 +328,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.5.0
+      1.5.2
   </span>
   
 </footer>

@@ -13,3 +13,6 @@ pubspec.lock
 coverage/
 test/*.vm.json
 .packages
+
+# flutter test output
+build/
