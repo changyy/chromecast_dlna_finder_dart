@@ -73,99 +73,147 @@ Future<List<DiscoveredDevice>> scanMdnsDevices({
   final completer = Completer<void>();
   final List<StreamSubscription> subscriptions = [];
   Timer? periodicQueryTimer;
+  Timer? scanTimer;
   bool isCompleted = false;
 
-  Future<void> sendPtrQuery() async {
-    final ptrStream = client.lookup<PtrResourceRecord>(
-      ResourceRecordQuery.serverPointer('$serviceType.local'),
-    );
-    final ptrSubscription = ptrStream.listen((ptr) async {
-      final serviceName = ptr.domainName;
-      await for (final srv in client.lookup<SrvResourceRecord>(
-        ResourceRecordQuery.service(serviceName),
-      )) {
-        await logger.debug(
-          'debug.found_service',
-          tag: logTag,
-          params: {
-            'target': srv.target,
-            'port': srv.port,
-            'priority': srv.priority,
-            'weight': srv.weight,
-          },
-        );
-        await for (final ip in client.lookup<IPAddressResourceRecord>(
-          ResourceRecordQuery.addressIPv4(srv.target),
-        )) {
-          await for (final txt in client.lookup<TxtResourceRecord>(
-            ResourceRecordQuery.text(serviceName),
-          )) {
-            final txtMap = <String, String>{};
-            final dynamic txtRaw = txt.text;
-            await _parseTxtRecord(txtRaw, txtMap, logger);
+  // Ends the scan early, e.g. when the (shared) client was stopped elsewhere.
+  void finishScan() {
+    if (!completer.isCompleted) completer.complete();
+  }
 
-            final device = deviceFactory(
-              ip: ip.address.address,
-              port: srv.port,
-              serviceName: serviceName,
-              txtMap: txtMap,
-              mdnsTypes: [mdnsType],
-            );
-            final deviceId =
-                '${mdnsType}_${(device.id ?? device.location ?? "${device.ip}_${device.name}")}';
-            if (deviceMap.containsKey(deviceId)) {
-              await logger.debug(
-                'debug.duplicate_device',
-                tag: logTag,
-                params: {'id': deviceId, 'name': device.name, 'ip': device.ip},
-              );
-              continue;
-            }
-            deviceMap[deviceId] = device;
-            await logger.info(
-              'info.found_device',
+  // A lookup that never throws: once the scan is over or the client has been
+  // stopped (by us, by another scan sharing the client, or by dispose()),
+  // MDnsClient.lookup throws a StateError — synchronously, and nothing awaits
+  // these nested lookups, so it used to surface as an uncaught app crash.
+  Stream<T> safeLookup<T extends ResourceRecord>(ResourceRecordQuery query) {
+    if (isCompleted) return const Stream.empty();
+    try {
+      return client.lookup<T>(query).handleError((Object e) {
+        logger.debug(
+          'debug.lookup_after_stop',
+          tag: logTag,
+          params: {'error': e.toString()},
+        );
+      }, test: (e) => e is StateError);
+    } on StateError catch (e) {
+      logger.debug(
+        'debug.lookup_after_stop',
+        tag: logTag,
+        params: {'error': e.toString()},
+      );
+      _mdnsClientStarted[client] = false;
+      finishScan();
+      return const Stream.empty();
+    }
+  }
+
+  Future<void> resolveService(String serviceName) async {
+    await for (final srv in safeLookup<SrvResourceRecord>(
+      ResourceRecordQuery.service(serviceName),
+    )) {
+      if (isCompleted) return;
+      await logger.debug(
+        'debug.found_service',
+        tag: logTag,
+        params: {
+          'target': srv.target,
+          'port': srv.port,
+          'priority': srv.priority,
+          'weight': srv.weight,
+        },
+      );
+      await for (final ip in safeLookup<IPAddressResourceRecord>(
+        ResourceRecordQuery.addressIPv4(srv.target),
+      )) {
+        if (isCompleted) return;
+        await for (final txt in safeLookup<TxtResourceRecord>(
+          ResourceRecordQuery.text(serviceName),
+        )) {
+          if (isCompleted) return;
+          final txtMap = <String, String>{};
+          final dynamic txtRaw = txt.text;
+          await _parseTxtRecord(txtRaw, txtMap, logger);
+
+          final device = deviceFactory(
+            ip: ip.address.address,
+            port: srv.port,
+            serviceName: serviceName,
+            txtMap: txtMap,
+            mdnsTypes: [mdnsType],
+          );
+          final deviceId =
+              '${mdnsType}_${(device.id ?? device.location ?? "${device.ip}_${device.name}")}';
+          if (deviceMap.containsKey(deviceId)) {
+            await logger.debug(
+              'debug.duplicate_device',
               tag: logTag,
-              params: {
-                'deviceType': device.type.toString(),
-                'name': device.name,
-                'ip': device.ip,
-                'model': device.model,
-              },
+              params: {'id': deviceId, 'name': device.name, 'ip': device.ip},
             );
-            if (onDeviceFound != null) {
-              onDeviceFound(device);
-            }
+            continue;
+          }
+          // The scan may have finished while we were awaiting the logger.
+          if (isCompleted) return;
+          deviceMap[deviceId] = device;
+          await logger.info(
+            'info.found_device',
+            tag: logTag,
+            params: {
+              'deviceType': device.type.toString(),
+              'name': device.name,
+              'ip': device.ip,
+              'model': device.model,
+            },
+          );
+          if (onDeviceFound != null && !isCompleted) {
+            onDeviceFound(device);
           }
         }
       }
-    });
+    }
+  }
+
+  void sendPtrQuery() {
+    if (isCompleted) return;
+    final ptrSubscription = safeLookup<PtrResourceRecord>(
+      ResourceRecordQuery.serverPointer('$serviceType.local'),
+    ).listen(
+      (ptr) {
+        // Not awaited by anyone: every error has to be handled here.
+        resolveService(ptr.domainName).catchError((Object e) {
+          logger.debug(
+            'debug.lookup_after_stop',
+            tag: logTag,
+            params: {'error': e.toString()},
+          );
+        });
+      },
+      onError: (Object e) {
+        logger.debug(
+          'debug.lookup_after_stop',
+          tag: logTag,
+          params: {'error': e.toString()},
+        );
+      },
+    );
     subscriptions.add(ptrSubscription);
   }
 
   try {
     // 首次查詢
-    await sendPtrQuery();
+    sendPtrQuery();
     // 週期性查詢
     periodicQueryTimer = Timer.periodic(sendQueryMessageInterval, (timer) {
-      if (isCompleted) return;
+      if (isCompleted) {
+        timer.cancel();
+        return;
+      }
       sendPtrQuery();
     });
 
     // Wait for scanDuration to complete (DLNA style)
-    Future.delayed(scanDuration, () {
-      if (!completer.isCompleted) completer.complete();
-    });
+    scanTimer = Timer(scanDuration, finishScan);
 
-    try {
-      await completer.future;
-    } catch (e) {
-      rethrow;
-    }
-    isCompleted = true;
-    periodicQueryTimer.cancel();
-    for (final sub in subscriptions) {
-      await sub.cancel();
-    }
+    await completer.future;
   } catch (e) {
     if (e is SocketException && e.osError?.errorCode == 1) {
       await logger.error(
@@ -179,18 +227,14 @@ Future<List<DiscoveredDevice>> scanMdnsDevices({
     }
     await logger.error('errors.scan_failed', tag: logTag, error: e);
   } finally {
-    if (stopClientOnFinish && ownsClient) {
-      try {
-        client.stop();
-      } catch (_) {}
-    }
-    if (stopClientOnFinish && ownsClient) {
-      _mdnsClientStarted[client] = false;
-      _mdnsClientStarting[client] = null;
-    }
+    isCompleted = true;
     periodicQueryTimer?.cancel();
+    scanTimer?.cancel();
     for (final sub in subscriptions) {
       await sub.cancel();
+    }
+    if (stopClientOnFinish && ownsClient) {
+      stopMdnsClient(client);
     }
   }
   devices.addAll(deviceMap.values);
@@ -350,6 +394,17 @@ Future<RawDatagramSocket> _safeBind(dynamic host, int port, {int? ttl}) async {
       rethrow;
     }
   }
+}
+
+/// Stop [client] and forget that it was started, so the next scan that is
+/// handed this client starts it again instead of calling lookup on a stopped
+/// client. Never throws.
+void stopMdnsClient(MDnsClient client) {
+  try {
+    client.stop();
+  } catch (_) {}
+  _mdnsClientStarted[client] = false;
+  _mdnsClientStarting[client] = null;
 }
 
 final _mdnsClientStarted = Expando<bool>();

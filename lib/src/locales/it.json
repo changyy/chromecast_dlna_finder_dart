@@ -31,6 +31,7 @@
     "txt_record_type": "Tipo di record TXT: {type}",
     "nonstandard_txt_format": "Formato record TXT non standard, tentativo di analisi: {txtRaw}",
     "txt_map": "txtMap: {map}",
-    "found_service": "Servizio trovato: target={target}, port={port}, priority={priority}, weight={weight}"
+    "found_service": "Servizio trovato: target={target}, port={port}, priority={priority}, weight={weight}",
+    "lookup_after_stop": "Query mDNS saltata, client già arrestato: {error}"
   }
 }

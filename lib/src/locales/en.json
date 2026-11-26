@@ -31,6 +31,7 @@
     "txt_record_type": "TXT record type: {type}",
     "nonstandard_txt_format": "Non-standard TXT record format, attempting to parse: {txtRaw}",
     "txt_map": "txtMap: {map}",
-    "found_service": "Found service: target={target}, port={port}, priority={priority}, weight={weight}"
+    "found_service": "Found service: target={target}, port={port}, priority={priority}, weight={weight}",
+    "lookup_after_stop": "mDNS lookup skipped, client already stopped: {error}"
   }
 }

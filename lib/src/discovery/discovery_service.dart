@@ -429,8 +429,8 @@ class DiscoveryService {
   /// 釋放資源
   Future<void> dispose() async {
     await _eventController.close();
-    try {
-      _sharedMdnsClient?.stop();
-    } catch (_) {}
+    final client = _sharedMdnsClient;
+    _sharedMdnsClient = null;
+    if (client != null) stopMdnsClient(client);
   }
 }

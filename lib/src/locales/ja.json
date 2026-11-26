@@ -31,6 +31,7 @@
     "txt_record_type": "TXTレコードタイプ: {type}",
     "nonstandard_txt_format": "非標準のTXTレコード形式。解析を試みます: {txtRaw}",
     "txt_map": "txtMap: {map}",
-    "found_service": "サービスを発見: target={target}, port={port}, priority={priority}, weight={weight}"
+    "found_service": "サービスを発見: target={target}, port={port}, priority={priority}, weight={weight}",
+    "lookup_after_stop": "mDNS クライアントは停止済みのため検索をスキップ: {error}"
   }
 }

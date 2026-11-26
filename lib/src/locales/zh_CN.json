@@ -31,6 +31,7 @@
     "txt_record_type": "TXT记录类型: {type}",
     "nonstandard_txt_format": "非标准TXT记录格式，尝试解析: {txtRaw}",
     "txt_map": "txtMap: {map}",
-    "found_service": "发现服务: target={target}, port={port}, priority={priority}, weight={weight}"
+    "found_service": "发现服务: target={target}, port={port}, priority={priority}, weight={weight}",
+    "lookup_after_stop": "mDNS 查询略过，client 已停止: {error}"
   }
 }

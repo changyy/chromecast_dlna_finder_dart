@@ -1,3 +1,12 @@
+## 1.5.2
+
+- Fixed an uncaught `StateError: mDNS client must be started before calling lookup.` that crashed apps (seen in Crashlytics for LAN Finder and AnyDLNA). After the scan ended or the shared `MDnsClient` was stopped (`dispose()`, a page closing), the periodic PTR query and the unawaited SRV → A → TXT lookups kept calling `lookup` on the stopped client.
+  - Lookups now go through a guard: none are issued once the scan is over, and a stopped client ends the scan early instead of throwing.
+  - Every error in the PTR listener and the resolve chain is handled; `onDeviceFound` is never called after the scan returned.
+  - The scan-duration timer is cancelled with the scan.
+- New `stopMdnsClient(client)`: stops a client and resets its started flag, so a later scan restarts it instead of querying a stopped client. `DiscoveryService.dispose()` uses it and drops the shared client.
+- Tests: `test/mdns_scanner_stop_test.dart` (fake `MDnsClient`) reproduces the crash on 1.5.1 and passes now.
+
 ## 1.5.1
 
 - Documentation refresh: updated README and related docs to align with the new mDNS/MethodChannel flow and recent API parameters.
