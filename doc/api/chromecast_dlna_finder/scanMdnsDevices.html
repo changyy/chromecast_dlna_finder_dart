@@ -132,6 +132,7 @@
   Timer? periodicQueryTimer;
   Timer? scanTimer;
   bool isCompleted = false;
+  SocketException? sendPermissionError;
 
   &#47;&#47; Ends the scan early, e.g. when the (shared) client was stopped elsewhere.
   void finishScan() {
@@ -160,6 +161,22 @@
       );
       _mdnsClientStarted[client] = false;
       finishScan();
+      return const Stream.empty();
+    } on SocketException catch (e) {
+      &#47;&#47; Sending the query failed, also synchronously (RawDatagramSocket.send):
+      &#47;&#47; &quot;Network is unreachable&quot; (errno 101) when Wi-Fi drops or switches
+      &#47;&#47; during a scan. From the periodic timer this crashed the app. Skip this
+      &#47;&#47; query; the next periodic query tries again.
+      logger.debug(
+        &#39;debug.mdns_send_failed&#39;,
+        tag: logTag,
+        params: {&#39;error&#39;: e.toString()},
+      );
+      if (e.osError?.errorCode == 1) {
+        &#47;&#47; No multicast permission: retrying won&#39;t help, fail the scan.
+        sendPermissionError ??= e;
+        finishScan();
+      }
       return const Stream.empty();
     }
   }
@@ -271,6 +288,7 @@
     scanTimer = Timer(scanDuration, finishScan);
 
     await completer.future;
+    if (sendPermissionError != null) throw sendPermissionError!;
   } catch (e) {
     if (e is SocketException &amp;&amp; e.osError?.errorCode == 1) {
       await logger.error(
@@ -328,7 +346,7 @@
 <footer>
   <span class="no-break">
     chromecast_dlna_finder
-      1.5.2
+      1.5.3
   </span>
   
 </footer>
