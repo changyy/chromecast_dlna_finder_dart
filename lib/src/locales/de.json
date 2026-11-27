@@ -32,6 +32,7 @@
     "nonstandard_txt_format": "Nicht standardmäßiges TXT-Eintragsformat, versuche zu parsen: {txtRaw}",
     "txt_map": "txtMap: {map}",
     "found_service": "Dienst gefunden: target={target}, port={port}, priority={priority}, weight={weight}",
-    "lookup_after_stop": "mDNS-Abfrage übersprungen, Client bereits gestoppt: {error}"
+    "lookup_after_stop": "mDNS-Abfrage übersprungen, Client bereits gestoppt: {error}",
+    "mdns_send_failed": "mDNS-Abfrage nicht gesendet (Netzwerk): {error}"
   }
 }

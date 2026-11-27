@@ -75,6 +75,7 @@ Future<List<DiscoveredDevice>> scanMdnsDevices({
   Timer? periodicQueryTimer;
   Timer? scanTimer;
   bool isCompleted = false;
+  SocketException? sendPermissionError;
 
   // Ends the scan early, e.g. when the (shared) client was stopped elsewhere.
   void finishScan() {
@@ -103,6 +104,22 @@ Future<List<DiscoveredDevice>> scanMdnsDevices({
       );
       _mdnsClientStarted[client] = false;
       finishScan();
+      return const Stream.empty();
+    } on SocketException catch (e) {
+      // Sending the query failed, also synchronously (RawDatagramSocket.send):
+      // "Network is unreachable" (errno 101) when Wi-Fi drops or switches
+      // during a scan. From the periodic timer this crashed the app. Skip this
+      // query; the next periodic query tries again.
+      logger.debug(
+        'debug.mdns_send_failed',
+        tag: logTag,
+        params: {'error': e.toString()},
+      );
+      if (e.osError?.errorCode == 1) {
+        // No multicast permission: retrying won't help, fail the scan.
+        sendPermissionError ??= e;
+        finishScan();
+      }
       return const Stream.empty();
     }
   }
@@ -214,6 +231,7 @@ Future<List<DiscoveredDevice>> scanMdnsDevices({
     scanTimer = Timer(scanDuration, finishScan);
 
     await completer.future;
+    if (sendPermissionError != null) throw sendPermissionError!;
   } catch (e) {
     if (e is SocketException && e.osError?.errorCode == 1) {
       await logger.error(

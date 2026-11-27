@@ -32,6 +32,7 @@
     "nonstandard_txt_format": "Нестандартный формат записи TXT, попытка анализа: {txtRaw}",
     "txt_map": "txtMap: {map}",
     "found_service": "Обнаружена служба: target={target}, port={port}, priority={priority}, weight={weight}",
-    "lookup_after_stop": "Запрос mDNS пропущен, клиент уже остановлен: {error}"
+    "lookup_after_stop": "Запрос mDNS пропущен, клиент уже остановлен: {error}",
+    "mdns_send_failed": "Запрос mDNS не отправлен (сеть): {error}"
   }
 }

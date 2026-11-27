@@ -32,6 +32,7 @@
     "nonstandard_txt_format": "Format d'enregistrement TXT non standard, tentative d'analyse : {txtRaw}",
     "txt_map": "txtMap : {map}",
     "found_service": "Service trouvé : target={target}, port={port}, priority={priority}, weight={weight}",
-    "lookup_after_stop": "Requête mDNS ignorée, client déjà arrêté : {error}"
+    "lookup_after_stop": "Requête mDNS ignorée, client déjà arrêté : {error}",
+    "mdns_send_failed": "Requête mDNS non envoyée (réseau) : {error}"
   }
 }

@@ -14,10 +14,18 @@ import 'package:test/test.dart';
 /// synchronously once the client is stopped. Answers are served with a small
 /// delay so the scan can be stopped in the middle of the resolve chain.
 class FakeMDnsClient extends MDnsClient {
-  FakeMDnsClient({this.answerDelay = const Duration(milliseconds: 20)})
-    : super();
+  FakeMDnsClient({
+    this.answerDelay = const Duration(milliseconds: 20),
+    this.sendErrno,
+  }) : super();
 
   final Duration answerDelay;
+
+  /// When set, lookup throws a SocketException with this errno synchronously,
+  /// like RawDatagramSocket.send does without a network (101) or without
+  /// multicast permission (1).
+  int? sendErrno;
+  int sendFailures = 0;
   bool started = false;
   int lookupsAfterStop = 0;
   int lookups = 0;
@@ -48,6 +56,15 @@ class FakeMDnsClient extends MDnsClient {
       throw StateError('mDNS client must be started before calling lookup.');
     }
     lookups++;
+    if (sendErrno != null) {
+      sendFailures++;
+      throw SocketException(
+        'Send failed',
+        osError: OSError('Network is unreachable', sendErrno!),
+        address: InternetAddress.anyIPv4,
+        port: 5353,
+      );
+    }
     final controller = StreamController<T>();
     Future<void>.delayed(answerDelay, () {
       final ResourceRecord? record = switch (query.resourceRecordType) {
@@ -217,5 +234,70 @@ void main() {
     expect(client.started, isTrue);
     expect(devices, hasLength(1));
     expect(client.lookupsAfterStop, 0);
+  });
+
+  // Crashlytics, DLNA for Chromecast 1.20261126.1160506 (Xiaomi, Android 12):
+  // "SocketException: Send failed (OS Error: Network is unreachable,
+  // errno = 101)" from MDnsClient.lookup — Wi-Fi dropped during a scan and the
+  // periodic PTR query threw from a timer callback.
+  test('send failure (no network) does not throw and the scan ends', () async {
+    final client = FakeMDnsClient(sendErrno: 101);
+    List<DiscoveredDevice>? devices;
+    final errors = await _uncaughtErrors(() async {
+      devices = await scanMdnsDevices(
+        serviceType: '_googlecast._tcp',
+        mdnsType: '_googlecast._tcp',
+        deviceFactory: _factory,
+        sharedClient: client,
+        stopClientOnFinish: false,
+        scanDuration: const Duration(milliseconds: 250),
+        sendQueryMessageInterval: const Duration(milliseconds: 50),
+      );
+    });
+    expect(errors, isEmpty, reason: 'SocketException escaped: $errors');
+    expect(devices, isEmpty);
+    expect(client.sendFailures, greaterThan(1), reason: 'keeps retrying');
+  });
+
+  test('network comes back mid-scan: later queries find the device', () async {
+    final client = FakeMDnsClient(sendErrno: 101);
+    final errors = await _uncaughtErrors(() async {
+      final scan = scanMdnsDevices(
+        serviceType: '_googlecast._tcp',
+        mdnsType: '_googlecast._tcp',
+        deviceFactory: _factory,
+        sharedClient: client,
+        stopClientOnFinish: false,
+        scanDuration: const Duration(milliseconds: 400),
+        sendQueryMessageInterval: const Duration(milliseconds: 50),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      client.sendErrno = null;
+      expect(await scan, hasLength(1));
+    });
+    expect(errors, isEmpty);
+  });
+
+  test('multicast permission denied (errno 1) still fails the scan', () async {
+    final client = FakeMDnsClient(sendErrno: 1);
+    Object? thrown;
+    final errors = await _uncaughtErrors(() async {
+      try {
+        await scanMdnsDevices(
+          serviceType: '_googlecast._tcp',
+          mdnsType: '_googlecast._tcp',
+          deviceFactory: _factory,
+          sharedClient: client,
+          stopClientOnFinish: false,
+          scanDuration: const Duration(milliseconds: 250),
+          sendQueryMessageInterval: const Duration(milliseconds: 50),
+        );
+      } catch (e) {
+        thrown = e;
+      }
+    });
+    expect(errors, isEmpty);
+    expect(thrown.toString(), contains('mDNS permission denied'));
+    expect(client.sendFailures, 1, reason: 'stops at the first denial');
   });
 }

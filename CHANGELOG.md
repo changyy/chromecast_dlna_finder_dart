@@ -1,3 +1,10 @@
+## 1.5.3
+
+- Fixed an uncaught `SocketException: Send failed (OS Error: Network is unreachable, errno = 101)` from `MDnsClient.lookup` (Crashlytics, DLNA for Chromecast, Android 12): when Wi-Fi dropped or switched during a scan, the periodic PTR query threw from its timer and crashed the app.
+  - A query that can't be sent is skipped and logged (`debug.mdns_send_failed`); the next periodic query tries again, so a scan finds devices once the network is back.
+  - No multicast permission (errno 1) still fails the scan with the existing `mDNS permission denied` exception, now also when it happens after the first query.
+- Tests: three more cases in `test/mdns_scanner_stop_test.dart` (send failure, network back mid-scan, permission denied).
+
 ## 1.5.2
 
 - Fixed an uncaught `StateError: mDNS client must be started before calling lookup.` that crashed apps (seen in Crashlytics for LAN Finder and AnyDLNA). After the scan ended or the shared `MDnsClient` was stopped (`dispose()`, a page closing), the periodic PTR query and the unawaited SRV → A → TXT lookups kept calling `lookup` on the stopped client.
